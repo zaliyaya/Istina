@@ -1,0 +1,3063 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sheets Dashboard</title>
+    <style>
+/* ============================================================
+   Тема: валидированная палитра дата-виза (light + dark)
+   Роли определены один раз; компоненты пишутся против ролей.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* Поверхности и «ink» */
+  --page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --delta-good: #006300;
+  --delta-bad: #d03b3b;
+  --hover-wash: rgba(11, 11, 11, 0.05);
+
+  /* Категориальные слоты (фиксированный порядок, никогда не циклится) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-other: #898781;
+
+  --accent: var(--series-1);
+  --spark: #c3c2b7;
+
+  --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 4px 16px rgba(11, 11, 11, 0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --delta-good: #0ca30c;
+    --delta-bad: #d03b3b;
+    --hover-wash: rgba(255, 255, 255, 0.06);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --series-other: #898781;
+
+    --spark: #52514e;
+    --shadow: none;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --delta-good: #0ca30c;
+  --delta-bad: #d03b3b;
+  --hover-wash: rgba(255, 255, 255, 0.06);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-other: #898781;
+
+  --spark: #52514e;
+  --shadow: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Общий хром
+   ============================================================ */
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-1);
+  cursor: pointer;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--hover-wash);
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+.btn.primary:hover {
+  filter: brightness(1.06);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.text-input {
+  padding: 9px 12px;
+  border: 1px solid var(--axis);
+  border-radius: 8px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  width: 100%;
+}
+.text-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+select.combo {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-1);
+  max-width: 220px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ============================================================
+   Каркас страницы
+   ============================================================ */
+
+#app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px 48px;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -20px 8px;
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--page) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.file-badge {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.theme-btn {
+  width: 36px;
+  justify-content: center;
+  padding: 7px 0;
+}
+
+/* ============================================================
+   Лендинг
+   ============================================================ */
+
+.landing {
+  display: block;
+  max-width: 620px;
+  margin: 9vh auto 0;
+  text-align: center;
+}
+.chips {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.chip {
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.landing h1 {
+  font-size: 34px;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+  margin: 0 0 12px;
+}
+.grad {
+  background: linear-gradient(90deg, var(--series-1), var(--series-7));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.landing-sub {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin: 0 auto 26px;
+  max-width: 480px;
+}
+.privacy {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 18px 0 0;
+}
+.landing-card {
+  padding: 24px;
+  text-align: left;
+}
+.url-row {
+  display: flex;
+  gap: 8px;
+}
+.hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 10px 0 0;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--grid);
+}
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 16px;
+  border: 1.5px dashed var(--axis);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+}
+.drop-zone.over {
+  border-color: var(--accent);
+  background: var(--hover-wash);
+}
+.drop-icon {
+  font-size: 22px;
+}
+.demo-btn {
+  margin-top: 10px;
+  color: var(--text-secondary);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.error-box {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--delta-bad) 8%, transparent);
+  color: var(--delta-bad);
+  font-size: 13px;
+}
+
+/* ============================================================
+   Сетка дэшборда
+   ============================================================ */
+
+.dash-wrap {
+  display: block;
+  margin-top: 4px;
+}
+.dash-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: opacity 0.2s;
+}
+.dash.refreshing {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.empty-slice {
+  padding: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 16px;
+}
+.wide {
+  width: 100%;
+}
+
+/* ============================================================
+   Панель фильтров
+   ============================================================ */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.date-filter {
+  position: relative;
+}
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 240px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.preset-row:hover {
+  background: var(--hover-wash);
+}
+.check {
+  width: 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.popover-footer {
+  border-top: 1px solid var(--grid); /* волосяная черта перед «своим периодом» */
+  margin-top: 6px;
+  padding: 10px 10px 6px;
+}
+.custom-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.custom-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.custom-inputs input {
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-1);
+  font-size: 12px;
+  width: 118px;
+}
+/* тире между датами — не путать с .dash, контейнером дэшборда */
+.range-dash {
+  color: var(--text-muted);
+}
+.cat-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reset {
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   KPI-плитка
+   ============================================================ */
+
+.tile {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.tile-main {
+  min-width: 0;
+}
+.tile-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* крупное число — пропорциональные цифры (без tabular-nums) */
+.tile-value {
+  font-size: clamp(21px, 5.5vw, 26px);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 2px;
+  color: var(--text-primary);
+}
+.tile-delta {
+  font-size: 12px;
+  margin-top: 2px;
+}
+.tile-delta.up {
+  color: var(--delta-good);
+}
+.tile-delta.down {
+  color: var(--delta-bad);
+}
+.tile-delta-label {
+  color: var(--text-muted);
+}
+.tile-spark {
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Карточка графика
+   ============================================================ */
+
+.chart-card {
+  padding: 16px;
+  min-width: 0;
+}
+.chart-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+.chart-card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.chart-card-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.chart-card-controls {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.chart-card-controls select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-1);
+  font-size: 12px;
+  max-width: 180px;
+}
+
+/* ============================================================
+   Линейный график
+   ============================================================ */
+
+.line-chart {
+  position: relative;
+  outline-offset: 2px;
+}
+.empty {
+  margin: 24px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.tick-text text {
+  font-size: 11px;
+  fill: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.end-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text-secondary);
+}
+.tooltip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 8px 10px;
+  min-width: 120px;
+  max-width: 220px;
+}
+.tooltip-title {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+/* ключ ряда — короткий штрих цвета серии, не квадрат */
+.tooltip-key {
+  width: 12px;
+  height: 2.5px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+/* значение — главное, имя ряда — вторично */
+.tooltip-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.tooltip-name {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Легенда
+   ============================================================ */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.legend-key.line {
+  width: 14px;
+  height: 3px;
+  border-radius: 1.5px;
+}
+.legend-key.rect {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   Горизонтальные бары
+   ============================================================ */
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+}
+.bar-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.bar-row.hovered {
+  background: var(--hover-wash);
+}
+.bar-label {
+  flex: 0 0 132px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+.bar-track {
+  position: relative;
+  flex: 1;
+  height: 20px; /* ≤ 24px */
+  margin-right: 56px; /* место под подпись значения */
+}
+.bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 0 4px 4px 0; /* скругление только на конце с данными */
+  transition: opacity 0.1s;
+}
+.bar-fill.neg {
+  border-radius: 4px 0 0 4px;
+}
+.bar-row.hovered .bar-fill {
+  opacity: 0.85;
+}
+.bar-value {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.bar-tooltip {
+  position: absolute;
+  z-index: 5;
+  right: 8px;
+  top: -26px;
+  pointer-events: none;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 5px 9px;
+  font-size: 12px;
+  max-width: 90%;
+}
+.bar-tooltip[hidden] {
+  display: none;
+}
+.bar-tooltip-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.bar-tooltip-name {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Таблица данных
+   ============================================================ */
+
+.table-scroll {
+  overflow: auto;
+  max-height: 440px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+}
+.table-scroll th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-1);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--axis);
+  white-space: nowrap;
+}
+.table-scroll td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--grid);
+  color: var(--text-primary);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* числа выравниваются по правому краю, tabular-nums — только в колонках */
+.table-scroll th.num,
+.table-scroll td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.table-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.table-footer .muted {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.table-footer .spacer {
+  flex: 1;
+}
+
+/* ============================================================
+   Мобильные
+   ============================================================ */
+
+@media (max-width: 640px) {
+  #app {
+    padding: 0 12px 32px;
+  }
+  .topbar {
+    margin: 0 -12px 8px;
+    padding: 8px 12px;
+  }
+  .btn {
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+  .file-badge {
+    display: none;
+  }
+  .landing {
+    margin-top: 4vh;
+  }
+  .landing h1 {
+    font-size: 26px;
+  }
+  .landing-card {
+    padding: 18px;
+  }
+  .url-row {
+    flex-direction: column;
+  }
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .charts-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .dash {
+    gap: 12px;
+  }
+  .tile {
+    padding: 12px 14px;
+  }
+  .tile-spark {
+    display: none; /* на узких плитках спарклайн не читается */
+  }
+  .bar-label {
+    flex-basis: 96px;
+  }
+  .bar-track {
+    margin-right: 48px;
+  }
+}
+    </style>
+    <script>
+      // применяем сохранённую тему до первого рендера, чтобы не мигало
+      try {
+        var t = localStorage.getItem('theme')
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <p style="padding: 24px">Для работы дэшборда нужен включённый JavaScript.</p>
+    </noscript>
+    <script>
+;(function () {
+'use strict'
+
+// ===== подключение SheetJS (только когда открывают .xlsx) =====
+const XLSX_URL = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+let xlsxPromise = null
+function loadXlsxGlobal() {
+  if (window.XLSX) return Promise.resolve(window.XLSX)
+  if (!xlsxPromise) {
+    xlsxPromise = new Promise((resolve, reject) => {
+      const tag = document.createElement('script')
+      tag.src = XLSX_URL
+      tag.onload = () => (window.XLSX ? resolve(window.XLSX) : reject(new Error('XLSX_CDN')))
+      tag.onerror = () => reject(new Error('XLSX_CDN'))
+      document.head.append(tag)
+    })
+  }
+  return xlsxPromise
+}
+
+// ===== format.js =====
+// Форматирование чисел и дат (ru-RU)
+
+const full = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 })
+const compact = new Intl.NumberFormat('ru-RU', {
+  notation: 'compact',
+  maximumSignificantDigits: 3,
+})
+const pct = new Intl.NumberFormat('ru-RU', {
+  style: 'percent',
+  maximumFractionDigits: 1,
+  signDisplay: 'always',
+})
+
+function fmtFull(v) {
+  if (v == null || Number.isNaN(v)) return '—'
+  return full.format(v)
+}
+
+function fmtCompact(v) {
+  if (v == null || Number.isNaN(v)) return '—'
+  if (Math.abs(v) < 10000) return full.format(v)
+  return compact.format(v)
+}
+
+function fmtDelta(v) {
+  if (v == null || !Number.isFinite(v)) return null
+  return pct.format(v)
+}
+
+const dayShort = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+const dayYear = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: '2-digit' })
+const monthShort = new Intl.DateTimeFormat('ru-RU', { month: 'short', year: 'numeric' })
+const dayLong = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+const monthLong = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' })
+const dateTime = new Intl.DateTimeFormat('ru-RU', {
+  day: '2-digit',
+  month: '2-digit',
+  year: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+const dateOnly = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' })
+
+// подпись деления оси X по единице бакета
+function fmtTick(date, unit, withYear = false) {
+  if (unit === 'year') return String(date.getFullYear())
+  if (unit === 'month') return monthShort.format(date)
+  return withYear ? dayYear.format(date) : dayShort.format(date)
+}
+
+// заголовок тултипа
+function fmtBucket(date, unit) {
+  if (unit === 'year') return String(date.getFullYear())
+  if (unit === 'month') return monthLong.format(date)
+  if (unit === 'week') return 'нед. с ' + dayLong.format(date)
+  return dayLong.format(date)
+}
+
+// значение-дата в таблице
+function fmtCell(v, type) {
+  if (v == null || v === '') return ''
+  if (v instanceof Date) {
+    return type === 'datetime' ? dateTime.format(v) : dateOnly.format(v)
+  }
+  if (typeof v === 'number') return full.format(v)
+  if (typeof v === 'boolean') return v ? 'Да' : 'Нет'
+  return String(v)
+}
+
+// ===== scale.js =====
+// «Красивые» деления оси: чистые числа 1/2/5×10ⁿ
+function niceScale(min, max, tickCount = 4) {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: 0, max: 1, ticks: [0, 1] }
+  if (min === max) {
+    if (min === 0) return { min: 0, max: 1, ticks: [0, 1] }
+    min = Math.min(0, min)
+    max = Math.max(0, max)
+    if (min === max) return { min: 0, max: 1, ticks: [0, 1] }
+  }
+  const span = max - min
+  const step0 = span / tickCount
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)))
+  const norm = step0 / mag
+  const step = (norm > 5 ? 10 : norm > 2 ? 5 : norm > 1 ? 2 : 1) * mag
+  const lo = Math.floor(min / step) * step
+  const hi = Math.ceil(max / step) * step
+  const ticks = []
+  const n = Math.round((hi - lo) / step)
+  for (let i = 0; i <= n; i++) ticks.push(lo + i * step)
+  return { min: lo, max: hi, ticks }
+}
+
+// Ширина контейнера через ResizeObserver — графики рендерятся в точных пикселях.
+// Возвращает функцию отписки.
+function observeWidth(el, onChange, initial = 600) {
+  if (typeof ResizeObserver !== 'function') {
+    onChange(el.clientWidth || initial)
+    return () => {}
+  }
+  const ro = new ResizeObserver((entries) => {
+    const w = entries[0] && entries[0].contentRect && entries[0].contentRect.width
+    if (w) onChange(w)
+  })
+  ro.observe(el)
+  return () => ro.disconnect()
+}
+
+// ===== dom.js =====
+// Мини-хелперы вместо шаблонов Vue: h() строит HTML-узел, s() — SVG-узел.
+// Всё остальное приложение работает обычными DOM-методами.
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+const PROP_KEYS = new Set(['value', 'checked', 'disabled', 'selected', 'textContent'])
+
+function applyProps(el, props) {
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue
+    if (k === 'class') el.setAttribute('class', v)
+    else if (k === 'style') Object.assign(el.style, v)
+    else if (k === 'dataset') Object.assign(el.dataset, v)
+    else if (k.startsWith('on') && typeof v === 'function') {
+      el.addEventListener(k.slice(2).toLowerCase(), v)
+    } else if (k === 'text') el.textContent = v
+    else if (PROP_KEYS.has(k)) el[k] = v
+    else el.setAttribute(k, v === true ? '' : v)
+  }
+}
+
+function appendAll(el, children) {
+  const list = Array.isArray(children) ? children : [children]
+  for (const c of list) {
+    if (c == null || c === false) continue
+    if (Array.isArray(c)) appendAll(el, c)
+    else el.append(c instanceof Node ? c : document.createTextNode(String(c)))
+  }
+}
+
+function h(tag, props = {}, children = []) {
+  const el = document.createElement(tag)
+  const { value, ...rest } = props || {}
+  applyProps(el, rest)
+  appendAll(el, children)
+  // value у <select> выставляем после <option>, иначе не найдёт вариант
+  if (value !== undefined && value !== null) el.value = value
+  return el
+}
+
+function s(tag, props = {}, children = []) {
+  const el = document.createElementNS(SVG_NS, tag)
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue
+    if (k === 'text') el.textContent = v
+    else el.setAttribute(k, v)
+  }
+  appendAll(el, children)
+  return el
+}
+
+// Виджеты с ResizeObserver помечаются data-widget и кладут отписку в __dispose;
+// перед заменой содержимого её нужно вызвать, иначе наблюдатели копятся.
+function setChildren(host, children) {
+  for (const node of host.querySelectorAll('[data-widget]')) {
+    if (typeof node.__dispose === 'function') node.__dispose()
+  }
+  host.replaceChildren()
+  appendAll(host, children)
+}
+
+// ===== fileLoad.js =====
+// Загрузка локальных файлов: CSV / TSV / XLSX → та же нормализованная таблица,
+// что и у gviz: { cols: [{key,label,type}], rows: [[...]] }
+
+// Модуль Excel тянется с CDN и только когда действительно нужен:
+// для CSV/TSV страница не грузит ни байта лишнего.
+const XLSX_CDN = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs'
+
+async function loadFile(file) {
+  const name = file.name.toLowerCase()
+  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    let XLSX
+    try {
+      XLSX = await loadXlsxGlobal()
+    } catch {
+      throw new Error('XLSX_CDN')
+    }
+    const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const grid = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null })
+    return inferTable(grid)
+  }
+  const text = await file.text()
+  return inferTable(parseCsv(text))
+}
+
+// ---------- CSV (RFC 4180 + автоопределение разделителя) ----------
+
+function detectDelimiter(text) {
+  const head = text.slice(0, 4000)
+  const counts = [',', ';', '\t'].map((d) => ({
+    d,
+    n: (head.match(new RegExp(d === '\t' ? '\t' : '\\' + d, 'g')) || []).length,
+  }))
+  counts.sort((a, b) => b.n - a.n)
+  return counts[0].n > 0 ? counts[0].d : ','
+}
+
+function parseCsv(text) {
+  const delim = detectDelimiter(text)
+  const rows = []
+  let row = []
+  let field = ''
+  let inQuotes = false
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') {
+          field += '"'
+          i++
+        } else inQuotes = false
+      } else field += ch
+    } else if (ch === '"') {
+      inQuotes = true
+    } else if (ch === delim) {
+      row.push(field)
+      field = ''
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++
+      row.push(field)
+      field = ''
+      rows.push(row)
+      row = []
+    } else {
+      field += ch
+    }
+  }
+  if (field !== '' || row.length > 0) {
+    row.push(field)
+    rows.push(row)
+  }
+  return rows
+}
+
+// ---------- вывод типов ----------
+
+const BOOL_MAP = {
+  true: true, false: false, да: true, нет: false, yes: true, no: false,
+  истина: true, ложь: false,
+}
+
+function tryNumber(s) {
+  let t = s.trim().replace(/[\s ]/g, '').replace(/[₽$€%]/g, '')
+  if (!t || !/\d/.test(t)) return null
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.')
+  else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, '')
+  else t = t.replace(',', '.')
+  if (!/^-?\d*\.?\d+(e-?\d+)?$/i.test(t)) return null
+  const n = Number(t)
+  return Number.isFinite(n) ? n : null
+}
+
+const DATE_RES = [
+  // ISO: 2026-08-03 или 2026-08-03T12:30(:00)
+  { re: /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?$/, y: 1, m: 2, d: 3, h: 4, min: 5 },
+  // 03.08.2026 или 03/08/2026 (+ время)
+  { re: /^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:[\s,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/, y: 3, m: 2, d: 1, h: 4, min: 5 },
+]
+
+function tryDate(s) {
+  const t = s.trim()
+  for (const { re, y, m, d, h, min } of DATE_RES) {
+    const g = t.match(re)
+    if (!g) continue
+    const date = new Date(+g[y], +g[m] - 1, +g[d], +(g[h] || 0), +(g[min] || 0))
+    if (date.getMonth() !== +g[m] - 1 || date.getDate() !== +g[d]) return null
+    return { date, hasTime: g[h] != null }
+  }
+  return null
+}
+
+// grid: массив массивов (строки как из CSV/XLSX) → нормализованная таблица
+function inferTable(grid) {
+  const rows0 = grid.filter((r) => r && r.some((v) => v != null && String(v).trim() !== ''))
+  if (rows0.length === 0) return { cols: [], rows: [] }
+
+  const width = Math.max(...rows0.map((r) => r.length))
+  const header = rows0[0].map((v, i) => {
+    const s = v == null ? '' : String(v).trim()
+    return s || `Колонка ${i + 1}`
+  })
+  const body = rows0.slice(1).map((r) => {
+    const out = new Array(width).fill(null)
+    for (let i = 0; i < width; i++) {
+      const v = r[i]
+      out[i] = v == null || v === '' ? null : v
+    }
+    return out
+  })
+
+  const cols = []
+  const colTotals = []
+  for (let i = 0; i < width; i++) {
+    const stats = { number: 0, date: 0, datetime: 0, boolean: 0, string: 0, total: 0 }
+    for (const r of body) {
+      const v = r[i]
+      if (v == null) continue
+      stats.total++
+      if (typeof v === 'number') stats.number++
+      else if (v instanceof Date) {
+        stats.date++
+        if (v.getHours() || v.getMinutes()) stats.datetime++
+      } else if (typeof v === 'boolean') stats.boolean++
+      else {
+        const s = String(v)
+        const d = tryDate(s)
+        if (d) {
+          stats.date++
+          if (d.hasTime) stats.datetime++
+        } else if (tryNumber(s) != null) stats.number++
+        else if (BOOL_MAP[s.trim().toLowerCase()] !== undefined) stats.boolean++
+        else stats.string++
+      }
+    }
+    const t = stats.total || 1
+    let type = 'string'
+    if (stats.date / t >= 0.9) type = stats.datetime > 0 ? 'datetime' : 'date'
+    else if (stats.number / t >= 0.9) type = 'number'
+    else if (stats.boolean / t >= 0.9) type = 'boolean'
+    cols.push({ key: 'col' + i, label: header[i] || `Колонка ${i + 1}`, type })
+    colTotals.push(stats.total)
+  }
+
+  const rows = body.map((r) =>
+    r.map((v, i) => {
+      if (v == null) return null
+      const type = cols[i].type
+      if (type === 'number') {
+        if (typeof v === 'number') return v
+        return tryNumber(String(v))
+      }
+      if (type === 'date' || type === 'datetime') {
+        if (v instanceof Date) return v
+        const d = tryDate(String(v))
+        return d ? d.date : null
+      }
+      if (type === 'boolean') {
+        if (typeof v === 'boolean') return v
+        const b = BOOL_MAP[String(v).trim().toLowerCase()]
+        return b === undefined ? null : b
+      }
+      if (v instanceof Date) return v
+      return String(v)
+    }),
+  )
+
+  // полностью пустые колонки (частый хвост из Google Sheets) не несут данных
+  const keep = cols.map((_, i) => i).filter((i) => colTotals[i] > 0)
+  if (keep.length > 0 && keep.length < cols.length) {
+    return {
+      cols: keep.map((i, j) => ({ ...cols[i], key: 'col' + j })),
+      rows: rows.map((r) => keep.map((i) => r[i])),
+    }
+  }
+  return { cols, rows }
+}
+
+// ===== analyze.js =====
+// Анализ таблицы: классификация колонок, фильтры, бакеты времени, агрегаты.
+
+const COUNT_KEY = '__count'
+
+// ---------- классификация колонок ----------
+
+function analyzeTable(table) {
+  const { cols, rows } = table
+  const n = rows.length
+
+  const columns = cols.map((c, i) => {
+    const meta = { ...c, index: i }
+    if (c.type === 'number') {
+      meta.kind = 'measure'
+    } else if (c.type === 'date' || c.type === 'datetime') {
+      meta.kind = 'time'
+    } else {
+      const uniq = new Set()
+      for (const r of rows) {
+        const v = r[i]
+        if (v == null || v === '') continue
+        uniq.add(typeof v === 'boolean' ? (v ? 'Да' : 'Нет') : String(v))
+        if (uniq.size > 40) break
+      }
+      const limit = Math.min(40, Math.max(2, Math.ceil(n * 0.6)))
+      meta.kind = uniq.size >= 2 && uniq.size <= limit ? 'category' : 'text'
+      meta.uniqueCount = uniq.size
+    }
+    return meta
+  })
+
+  const timeCol = columns.find((c) => c.kind === 'time') || null
+
+  // измерения: «количество записей» всегда первым, затем числовые колонки
+  const measures = [
+    { key: COUNT_KEY, label: 'Записей', col: -1 },
+    ...columns
+      .filter((c) => c.kind === 'measure')
+      .map((c) => ({ key: c.key, label: c.label, col: c.index })),
+  ]
+
+  const categoryCols = columns
+    .filter((c) => c.kind === 'category')
+    .sort((a, b) => a.uniqueCount - b.uniqueCount)
+
+  return { columns, timeCol, measures, categoryCols }
+}
+
+function categoryValue(v) {
+  if (v == null || v === '') return '(пусто)'
+  if (typeof v === 'boolean') return v ? 'Да' : 'Нет'
+  return String(v)
+}
+
+function uniqueValues(rows, colIndex, cap = 200) {
+  const set = new Set()
+  for (const r of rows) {
+    set.add(categoryValue(r[colIndex]))
+    if (set.size > cap) break
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'ru'))
+}
+
+// ---------- фильтры ----------
+
+// filters: { from: Date|null, to: Date|null, cats: { [colIndex]: value|null } }
+function applyFilters(rows, timeCol, filters) {
+  const { from, to, cats } = filters
+  const catEntries = Object.entries(cats).filter(([, v]) => v != null && v !== '')
+  if (!from && !to && catEntries.length === 0) return rows
+
+  return rows.filter((r) => {
+    if (timeCol && (from || to)) {
+      const d = r[timeCol.index]
+      if (!(d instanceof Date)) return false
+      if (from && d < from) return false
+      if (to && d > to) return false
+    }
+    for (const [idx, val] of catEntries) {
+      if (categoryValue(r[+idx]) !== val) return false
+    }
+    return true
+  })
+}
+
+// ---------- бакеты времени ----------
+
+function dateExtent(rows, timeIdx) {
+  let min = null
+  let max = null
+  for (const r of rows) {
+    const d = r[timeIdx]
+    if (!(d instanceof Date)) continue
+    if (!min || d < min) min = d
+    if (!max || d > max) max = d
+  }
+  return min && max ? [min, max] : null
+}
+
+// единица бакета: чтобы точек было не больше ~60
+function chooseUnit(min, max) {
+  const days = (max - min) / 86400000
+  if (days <= 62) return 'day'
+  if (days <= 430) return 'week'
+  if (days <= 1850) return 'month'
+  return 'year'
+}
+
+function unitLabel(unit) {
+  return { day: 'дню', week: 'неделе', month: 'месяцу', year: 'году' }[unit]
+}
+
+function unitLabelAgg(unit) {
+  return { day: 'по дням', week: 'по неделям', month: 'по месяцам', year: 'по годам' }[unit]
+}
+
+function bucketStart(d, unit) {
+  if (unit === 'year') return new Date(d.getFullYear(), 0, 1)
+  if (unit === 'month') return new Date(d.getFullYear(), d.getMonth(), 1)
+  if (unit === 'week') {
+    const day = (d.getDay() + 6) % 7 // понедельник — начало недели
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - day)
+  }
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function nextBucket(d, unit) {
+  if (unit === 'year') return new Date(d.getFullYear() + 1, 0, 1)
+  if (unit === 'month') return new Date(d.getFullYear(), d.getMonth() + 1, 1)
+  const days = unit === 'week' ? 7 : 1
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + days)
+}
+
+// Временной ряд: сумма каждого измерения по бакетам, пустые бакеты = 0
+function buildTimeline(rows, timeIdx, measures, unit) {
+  const map = new Map()
+  for (const r of rows) {
+    const d = r[timeIdx]
+    if (!(d instanceof Date)) continue
+    const t = bucketStart(d, unit).getTime()
+    let b = map.get(t)
+    if (!b) {
+      b = { t, values: {} }
+      for (const m of measures) b.values[m.key] = 0
+      map.set(t, b)
+    }
+    for (const m of measures) {
+      if (m.col === -1) b.values[m.key] += 1
+      else if (typeof r[m.col] === 'number') b.values[m.key] += r[m.col]
+    }
+  }
+  if (map.size === 0) return []
+
+  const times = [...map.keys()].sort((a, b) => a - b)
+  const out = []
+  let cur = new Date(times[0])
+  const last = times[times.length - 1]
+  while (cur.getTime() <= last) {
+    const t = cur.getTime()
+    const b = map.get(t)
+    if (b) out.push(b)
+    else {
+      const empty = { t, values: {} }
+      for (const m of measures) empty.values[m.key] = 0
+      out.push(empty)
+    }
+    cur = nextBucket(cur, unit)
+    if (out.length > 1000) break // защита от битых дат
+  }
+  return out
+}
+
+// Неполные крайние бакеты (неделя/месяц/год, захваченные данными частично)
+// занижают края линии и искажают дельту KPI — обрезаем их из динамики.
+function trimPartialEdges(timeline, unit, ext) {
+  if (!ext || unit === 'day' || timeline.length < 3) return timeline
+  const [min, max] = ext
+  const dayOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  let out = timeline
+  if (dayOf(min) !== bucketStart(min, unit).getTime()) out = out.slice(1)
+  const lastDay = nextBucket(bucketStart(max, unit), unit).getTime() - 86400000
+  if (dayOf(max) < lastDay) out = out.slice(0, -1)
+  return out.length >= 2 ? out : timeline
+}
+
+// ---------- агрегаты ----------
+
+function measureValue(row, measure) {
+  if (measure.col === -1) return 1
+  const v = row[measure.col]
+  return typeof v === 'number' ? v : 0
+}
+
+// Сумма измерения по категориям: топ-N + «Прочее»
+function aggregateByCategory(rows, catIdx, measure, topN = 10) {
+  const totals = new Map()
+  for (const r of rows) {
+    const key = categoryValue(r[catIdx])
+    totals.set(key, (totals.get(key) || 0) + measureValue(r, measure))
+  }
+  const sorted = [...totals.entries()].sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+  if (sorted.length <= topN) {
+    return sorted.map(([label, value]) => ({ label, value }))
+  }
+  const head = sorted.slice(0, topN).map(([label, value]) => ({ label, value }))
+  const rest = sorted.slice(topN).reduce((s, [, v]) => s + v, 0)
+  head.push({ label: 'Прочее', value: rest, other: true })
+  return head
+}
+
+// Стабильная раскраска категорий: слоты по полному (нефильтрованному) набору,
+// чтобы фильтры не перекрашивали выживших. Максимум 5 цветных + «Прочее».
+function categorySlots(allRows, catIdx, measure, maxSlots = 5) {
+  const totals = new Map()
+  for (const r of allRows) {
+    const key = categoryValue(r[catIdx])
+    totals.set(key, (totals.get(key) || 0) + measureValue(r, measure))
+  }
+  const sorted = [...totals.entries()].sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+  const slots = new Map()
+  sorted.slice(0, maxSlots).forEach(([label], i) => slots.set(label, i + 1)) // series-1..5
+  return slots
+}
+
+// Ряды «измерение по времени, разбитое по категории» для слотов + «Прочее»
+function timelineByCategory(rows, timeIdx, catIdx, measure, unit, slots) {
+  const seriesMap = new Map() // label -> Map<t, sum>
+  const bucketSet = new Set()
+  for (const r of rows) {
+    const d = r[timeIdx]
+    if (!(d instanceof Date)) continue
+    const t = bucketStart(d, unit).getTime()
+    bucketSet.add(t)
+    const raw = categoryValue(r[catIdx])
+    const label = slots.has(raw) ? raw : 'Прочее'
+    let m = seriesMap.get(label)
+    if (!m) {
+      m = new Map()
+      seriesMap.set(label, m)
+    }
+    m.set(t, (m.get(t) || 0) + measureValue(r, measure))
+  }
+  const xs = [...bucketSet].sort((a, b) => a - b)
+  const order = [...slots.keys()].filter((l) => seriesMap.has(l))
+  if (seriesMap.has('Прочее')) order.push('Прочее')
+  const series = order.map((label) => ({
+    name: label,
+    slot: slots.get(label) || 'other',
+    values: xs.map((t) => seriesMap.get(label).get(t) || 0),
+  }))
+  return { xs, series }
+}
+
+// KPI: сумма за срез + дельта последнего бакета к предыдущему + спарклайн
+function computeKpis(rows, timeline, measures, maxTiles = 6) {
+  return measures.slice(0, maxTiles).map((m) => {
+    let total = 0
+    for (const r of rows) total += measureValue(r, m)
+    let delta = null
+    let spark = null
+    if (timeline && timeline.length >= 2) {
+      spark = timeline.slice(-12).map((b) => b.values[m.key])
+      const lastV = timeline[timeline.length - 1].values[m.key]
+      const prevV = timeline[timeline.length - 2].values[m.key]
+      if (prevV !== 0) delta = (lastV - prevV) / Math.abs(prevV)
+    }
+    return { key: m.key, label: m.label, total, delta, spark }
+  })
+}
+
+// ===== demo.js =====
+// Демо-набор: 120 дней продаж. Детерминированный генератор,
+// чтобы дэшборд всегда выглядел одинаково.
+
+
+const CHANNELS = [
+  ['Сайт', 1.0],
+  ['Маркетплейс', 0.75],
+  ['Розница', 0.45],
+  ['Партнёры', 0.2],
+]
+const REGIONS = ['Москва', 'Санкт-Петербург', 'Казань', 'Екатеринбург', 'Новосибирск']
+
+// простой LCG вместо Math.random — воспроизводимо
+function makeRand(seed) {
+  let s = seed
+  return () => {
+    s = (s * 48271) % 2147483647
+    return s / 2147483647
+  }
+}
+
+function demoTable() {
+  const rand = makeRand(20260803)
+  const rows = [['Дата', 'Канал', 'Регион', 'Выручка', 'Заказы']]
+  const start = new Date(2026, 3, 5) // 5 апреля 2026, 120 дней до начала августа
+  for (let d = 0; d < 120; d++) {
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + d)
+    const growth = 1 + d / 160 // лёгкий тренд вверх
+    const weekend = date.getDay() === 0 || date.getDay() === 6 ? 0.6 : 1
+    for (const [channel, weight] of CHANNELS) {
+      if (rand() < 0.12) continue // не каждый канал продаёт каждый день
+      const region = REGIONS[Math.floor(rand() * REGIONS.length)]
+      const orders = Math.max(1, Math.round((4 + rand() * 14) * weight * weekend * growth))
+      const avgCheck = 1800 + rand() * 2600
+      const revenue = Math.round(orders * avgCheck)
+      const dd = String(date.getDate()).padStart(2, '0')
+      const mm = String(date.getMonth() + 1).padStart(2, '0')
+      rows.push([`${dd}.${mm}.${date.getFullYear()}`, channel, region, String(revenue), String(orders)])
+    }
+  }
+  return inferTable(rows)
+}
+
+// ===== gviz.js =====
+// Загрузка данных Google Sheets через публичный gviz-эндпоинт.
+// Работает для таблиц с доступом «все, у кого есть ссылка» — без API-ключей.
+
+
+
+const SHEET_ID_RE = /\/spreadsheets\/(?:u\/\d+\/)?d\/([a-zA-Z0-9-_]+)/
+const GVIZ_DATE_RE = /^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?/
+
+function parseSheetUrl(input) {
+  const s = String(input || '').trim()
+  if (!s) return null
+  let id = null
+  const m = s.match(SHEET_ID_RE)
+  if (m) id = m[1]
+  else if (/^[a-zA-Z0-9-_]{25,}$/.test(s)) id = s // вставили голый ID
+  if (!id) return null
+  const gidMatch = s.match(/[#?&]gid=(\d+)/)
+  return { id, gid: gidMatch ? gidMatch[1] : null }
+}
+
+function sheetLink({ id, gid }) {
+  return `https://docs.google.com/spreadsheets/d/${id}/edit${gid ? '#gid=' + gid : ''}`
+}
+
+async function fetchSheet({ id, gid }) {
+  const params = new URLSearchParams({ tqx: 'out:json' })
+  if (gid != null) params.set('gid', gid)
+  const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?${params}`
+
+  let res
+  try {
+    res = await fetch(url, { redirect: 'follow' })
+  } catch {
+    // закрытая таблица уводит на страницу логина Google — fetch падает на CORS
+    throw new Error('ACCESS')
+  }
+  if (!res.ok) throw new Error(res.status === 404 ? 'NOT_FOUND' : 'ACCESS')
+
+  const text = await res.text()
+  const start = text.indexOf('(')
+  const end = text.lastIndexOf(')')
+  if (start === -1 || end <= start) throw new Error('ACCESS')
+
+  let payload
+  try {
+    payload = JSON.parse(text.slice(start + 1, end))
+  } catch {
+    throw new Error('PARSE')
+  }
+  if (payload.status === 'error') {
+    const e = payload.errors && payload.errors[0]
+    throw new Error('GVIZ:' + ((e && (e.detailed_message || e.message)) || 'unknown'))
+  }
+  return normalizeTable(payload.table)
+}
+
+function parseValue(cell, type) {
+  if (!cell || cell.v == null) return null
+  const v = cell.v
+  if (type === 'date' || type === 'datetime') {
+    if (typeof v === 'string') {
+      const m = v.match(GVIZ_DATE_RE)
+      if (m) {
+        return new Date(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0))
+      }
+    }
+    return null
+  }
+  if (type === 'timeofday') return cell.f != null ? cell.f : String(v)
+  return v
+}
+
+// Приводим gviz-таблицу к { cols: [{key,label,type}], rows: [[...]] }.
+// Затем прогоняем через общий вывод типов (inferTable): у листов без
+// закреплённого заголовка gviz типизирует все колонки как string, и числа
+// с датами нужно распознавать заново — тем же кодом, что и для файлов.
+function normalizeTable(table) {
+  const rawCols = table.cols || []
+  let rows = (table.rows || []).map((r) =>
+    rawCols.map((c, i) => parseValue(r.c && r.c[i], c.type)),
+  )
+
+  let labels = rawCols.map((c) => (c.label || '').trim())
+
+  // Если у листа нет закреплённой строки заголовка, gviz отдаёт пустые label,
+  // а заголовки лежат первой строкой данных.
+  if (labels.every((l) => !l) && rows.length > 0) {
+    const first = rows[0]
+    const looksLikeHeader = first.every((v) => v == null || typeof v === 'string')
+    if (looksLikeHeader) {
+      labels = first.map((v, i) => (v ? String(v).trim() : rawCols[i].id || `Колонка ${i + 1}`))
+      rows = rows.slice(1)
+    }
+  }
+  labels = labels.map((l, i) => l || rawCols[i].id || `Колонка ${i + 1}`)
+
+  return inferTable([labels, ...rows])
+}
+
+function errorMessage(err) {
+  const msg = err && err.message ? err.message : String(err)
+  if (msg === 'ACCESS') {
+    // при открытии страницы с диска браузер может резать запрос ещё до Google
+    const local = typeof location !== 'undefined' && location.protocol === 'file:'
+    return (
+      'Не удалось получить данные. Проверьте, что доступ к таблице открыт: Файл → Настройки доступа → «Все, у кого есть ссылка» → Читатель.' +
+      (local
+        ? ' Страница открыта как локальный файл — если доступ уже открыт, браузер мог заблокировать запрос: положите файлы на любой хостинг или скачайте таблицу в CSV и перетащите сюда.'
+        : '')
+    )
+  }
+  if (msg === 'NOT_FOUND') return 'Таблица не найдена — проверьте ссылку.'
+  if (msg === 'PARSE') return 'Не удалось разобрать ответ Google Sheets.'
+  if (msg.startsWith('GVIZ:')) return 'Google Sheets вернул ошибку: ' + msg.slice(5)
+  return 'Ошибка загрузки: ' + msg
+}
+
+// ===== charts.js =====
+// ============================================================
+// Линейный график: 2px линии, заливка-«вуаль» 10% для одиночного ряда,
+// crosshair-тултип со всеми рядами в точке, клавиатурная навигация ←/→.
+// xs — отметки времени (ms), общие для всех рядов.
+// series — [{ name, color, values: number[] }]
+// ============================================================
+
+const PAD_TOP = 12
+const PAD_BOTTOM = 26
+const PAD_RIGHT = 18
+
+function yDomainOf(series) {
+  let min = 0
+  let max = 1
+  let any = false
+  for (const ser of series) {
+    for (const v of ser.values) {
+      if (!Number.isFinite(v)) continue
+      if (!any) {
+        min = Math.min(0, v)
+        max = v
+        any = true
+      } else {
+        if (v < min) min = v
+        if (v > max) max = v
+      }
+    }
+  }
+  return niceScale(min, Math.max(min + 1e-9, max), 4)
+}
+
+function lineChart({ xs, series, unit = 'day', height = 230, ariaLabel = 'График' }) {
+  const wrap = h('div', {
+    class: 'line-chart',
+    tabindex: '0',
+    role: 'img',
+    'aria-label': ariaLabel,
+  })
+  wrap.dataset.widget = 'line'
+
+  if (!xs.length) {
+    wrap.append(h('p', { class: 'empty', text: 'Нет данных за выбранный период' }))
+    return wrap
+  }
+
+  const yDomain = yDomainOf(series)
+  const longest = Math.max(...yDomain.ticks.map((t) => fmtCompact(t).length), 2)
+  const padLeft = Math.min(70, Math.max(34, longest * 7 + 8))
+  const plotH = height - PAD_TOP - PAD_BOTTOM
+
+  let width = 600
+  let hoverIdx = null
+
+  const plotW = () => Math.max(10, width - padLeft - PAD_RIGHT)
+  const xAt = (i) =>
+    xs.length <= 1 ? padLeft + plotW() / 2 : padLeft + (i / (xs.length - 1)) * plotW()
+  const yAt = (v) => PAD_TOP + plotH - ((v - yDomain.min) / (yDomain.max - yDomain.min)) * plotH
+
+  const crossesYear =
+    xs.length >= 2 && new Date(xs[0]).getFullYear() !== new Date(xs[xs.length - 1]).getFullYear()
+
+  function xTicks() {
+    const n = xs.length
+    const maxTicks = Math.max(2, Math.floor(plotW() / 74))
+    const step = Math.max(1, Math.ceil(n / maxTicks))
+    const idxs = []
+    for (let i = 0; i < n; i += step) idxs.push(i)
+    if (idxs[idxs.length - 1] !== n - 1 && n > 1) {
+      if (xAt(n - 1) - xAt(idxs[idxs.length - 1]) < 50) idxs.pop()
+      idxs.push(n - 1)
+    }
+    return idxs.map((i) => ({
+      i,
+      x: xAt(i),
+      label: fmtTick(new Date(xs[i]), unit, crossesYear),
+    }))
+  }
+
+  function linePath(values) {
+    return values
+      .map((v, i) => `${i === 0 ? 'M' : 'L'}${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`)
+      .join('')
+  }
+
+  // вуаль под линией — только для одиночного ряда
+  function areaPath() {
+    if (series.length !== 1 || xs.length < 2) return null
+    const values = series[0].values
+    const base = PAD_TOP + plotH
+    return `${linePath(values)}L${xAt(values.length - 1).toFixed(1)},${base}L${xAt(0).toFixed(1)},${base}Z`
+  }
+
+  function draw() {
+    const ticks = xTicks()
+    const svg = s('svg', { width, height, viewBox: `0 0 ${width} ${height}` })
+
+    // сетка: сплошные волосяные линии
+    svg.append(
+      s(
+        'g',
+        { 'shape-rendering': 'crispEdges' },
+        yDomain.ticks.map((t) =>
+          s('line', {
+            x1: padLeft,
+            x2: width - PAD_RIGHT,
+            y1: yAt(t),
+            y2: yAt(t),
+            stroke: t === 0 ? 'var(--axis)' : 'var(--grid)',
+            'stroke-width': 1,
+          }),
+        ),
+      ),
+    )
+
+    // подписи осей
+    svg.append(
+      s('g', { class: 'tick-text' }, [
+        ...yDomain.ticks.map((t) =>
+          s('text', {
+            x: padLeft - 6,
+            y: yAt(t) + 3.5,
+            'text-anchor': 'end',
+            text: fmtCompact(t),
+          }),
+        ),
+        ...ticks.map((t) =>
+          s('text', {
+            x: Math.max(padLeft + 8, Math.min(t.x, width - 20)),
+            y: height - 8,
+            'text-anchor': 'middle',
+            text: t.label,
+          }),
+        ),
+      ]),
+    )
+
+    // crosshair
+    const hovering = hoverIdx != null && hoverIdx < xs.length
+    if (hovering) {
+      svg.append(
+        s('line', {
+          x1: xAt(hoverIdx),
+          x2: xAt(hoverIdx),
+          y1: PAD_TOP,
+          y2: PAD_TOP + plotH,
+          stroke: 'var(--axis)',
+          'stroke-width': 1,
+          'shape-rendering': 'crispEdges',
+        }),
+      )
+    }
+
+    // данные
+    const area = areaPath()
+    if (area) svg.append(s('path', { d: area, fill: series[0].color, opacity: 0.1 }))
+
+    for (const ser of series) {
+      const endX = xAt(ser.values.length - 1)
+      const endY = yAt(ser.values[ser.values.length - 1])
+      svg.append(
+        s('g', {}, [
+          s('path', {
+            d: linePath(ser.values),
+            fill: 'none',
+            stroke: ser.color,
+            'stroke-width': 2,
+            'stroke-linejoin': 'round',
+            'stroke-linecap': 'round',
+          }),
+          // маркер конца с кольцом цвета поверхности
+          s('circle', {
+            cx: endX,
+            cy: endY,
+            r: 4,
+            fill: ser.color,
+            stroke: 'var(--surface-1)',
+            'stroke-width': 2,
+          }),
+        ]),
+      )
+    }
+
+    // подпись значения у конца линии — только для одиночного ряда
+    if (series.length === 1) {
+      const values = series[0].values
+      const endX = xAt(values.length - 1)
+      const endY = yAt(values[values.length - 1])
+      svg.append(
+        s('text', {
+          x: Math.min(endX - 8, width - 8),
+          y: Math.max(12, endY - 10),
+          'text-anchor': 'end',
+          class: 'end-label',
+          text: fmtCompact(values[values.length - 1]),
+        }),
+      )
+    }
+
+    // точки под crosshair
+    if (hovering) {
+      svg.append(
+        s(
+          'g',
+          {},
+          series.map((ser) =>
+            s('circle', {
+              cx: xAt(hoverIdx),
+              cy: yAt(ser.values[hoverIdx]),
+              r: 4.5,
+              fill: ser.color,
+              stroke: 'var(--surface-1)',
+              'stroke-width': 2,
+            }),
+          ),
+        ),
+      )
+    }
+
+    const nodes = [svg]
+
+    if (hovering) {
+      const x = xAt(hoverIdx)
+      const flip = x > width - 190
+      const tip = h(
+        'div',
+        {
+          class: 'tooltip',
+          style: {
+            left: flip ? '' : `${x + 14}px`,
+            right: flip ? `${width - x + 14}px` : '',
+            top: `${PAD_TOP}px`,
+          },
+        },
+        [
+          h('div', { class: 'tooltip-title', text: fmtBucket(new Date(xs[hoverIdx]), unit) }),
+          ...series.map((ser) =>
+            h('div', { class: 'tooltip-row' }, [
+              h('span', { class: 'tooltip-key', style: { background: ser.color } }),
+              h('span', { class: 'tooltip-value', text: fmtFull(ser.values[hoverIdx]) }),
+              h('span', { class: 'tooltip-name', text: ser.name }),
+            ]),
+          ),
+        ],
+      )
+      nodes.push(tip)
+    }
+
+    wrap.replaceChildren(...nodes)
+  }
+
+  function idxFromEvent(e) {
+    const rect = wrap.getBoundingClientRect()
+    const px = e.clientX - rect.left
+    const n = xs.length
+    if (n <= 1) return n - 1
+    const t = (px - padLeft) / plotW()
+    return Math.max(0, Math.min(n - 1, Math.round(t * (n - 1))))
+  }
+
+  function setHover(i) {
+    if (i === hoverIdx) return
+    hoverIdx = i
+    draw()
+  }
+
+  wrap.addEventListener('pointermove', (e) => setHover(idxFromEvent(e)))
+  wrap.addEventListener('pointerleave', () => setHover(null))
+  wrap.addEventListener('blur', () => setHover(null))
+  wrap.addEventListener('keydown', (e) => {
+    const n = xs.length
+    if (!n) return
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      const d = e.key === 'ArrowRight' ? 1 : -1
+      const cur = hoverIdx == null ? n - 1 : hoverIdx
+      setHover(Math.max(0, Math.min(n - 1, cur + d)))
+    } else if (e.key === 'Escape') {
+      setHover(null)
+    }
+  })
+
+  draw()
+  wrap.__dispose = observeWidth(wrap, (w) => {
+    if (Math.abs(w - width) < 0.5) return
+    width = w
+    draw()
+  })
+
+  return wrap
+}
+
+// ============================================================
+// Горизонтальные бары: ≤24px толщиной, скруглённый конец-с-данными (4px),
+// прямой у базовой линии; каждый бар подписан значением у конца.
+// Марка — hit-target: hover подсвечивает ряд и показывает тултип.
+// items — [{ label, value, other? }]
+// ============================================================
+
+function barChart({ items, color = 'var(--series-1)', ariaLabel = 'Диаграмма' }) {
+  const root = h('div', { class: 'bar-chart', role: 'img', 'aria-label': ariaLabel })
+  if (!items.length) {
+    root.append(h('p', { class: 'empty', text: 'Нет данных' }))
+    return root
+  }
+
+  const vals = items.map((i) => i.value)
+  const min = Math.min(0, ...vals)
+  const max = Math.max(0, ...vals)
+  const span = max - min || 1
+  const zeroPct = ((0 - min) / span) * 100
+
+  const bar = (v) => {
+    const wPct = (Math.abs(v) / span) * 100
+    return v >= 0
+      ? { left: zeroPct, width: wPct, neg: false }
+      : { left: ((v - min) / span) * 100, width: wPct, neg: true }
+  }
+
+  for (const it of items) {
+    const g = bar(it.value)
+    const fill = h('span', {
+      class: g.neg ? 'bar-fill neg' : 'bar-fill',
+      style: {
+        left: g.left + '%',
+        width: Math.max(g.width, 0.4) + '%',
+        background: it.other ? 'var(--series-other)' : color,
+      },
+    })
+    const valueLabel = h('span', {
+      class: 'bar-value',
+      style: g.neg
+        ? { right: 100 - g.left + '%', paddingRight: '6px' }
+        : { left: g.left + g.width + '%', paddingLeft: '6px' },
+      text: fmtCompact(it.value),
+    })
+    const tooltip = h('span', { class: 'bar-tooltip', hidden: true }, [
+      h('span', { class: 'bar-tooltip-value', text: fmtFull(it.value) }),
+      h('span', { class: 'bar-tooltip-name', text: it.label }),
+    ])
+
+    const row = h('div', { class: 'bar-row', tabindex: '0' }, [
+      h('span', { class: 'bar-label', title: it.label, text: it.label }),
+      h('span', { class: 'bar-track' }, [fill, valueLabel]),
+      tooltip,
+    ])
+
+    const on = () => {
+      row.classList.add('hovered')
+      tooltip.hidden = false
+    }
+    const off = () => {
+      row.classList.remove('hovered')
+      tooltip.hidden = true
+    }
+    row.addEventListener('pointerenter', on)
+    row.addEventListener('pointerleave', off)
+    row.addEventListener('focus', on)
+    row.addEventListener('blur', off)
+
+    root.append(row)
+  }
+
+  return root
+}
+
+// ============================================================
+// 12-точечный спарклайн: линия приглушённым серым, текущий период — акцентная точка
+// ============================================================
+
+function sparkline({ values, width = 110, height = 34 }) {
+  if (!values || values.length < 2) return null
+  const pad = 4
+  let min = Math.min(...values)
+  let max = Math.max(...values)
+  if (min === max) {
+    min -= 1
+    max += 1
+  }
+  const w = width - pad * 2
+  const hgt = height - pad * 2
+  const pts = values.map((v, i) => [
+    pad + (i / (values.length - 1)) * w,
+    pad + hgt - ((v - min) / (max - min)) * hgt,
+  ])
+  const last = pts[pts.length - 1]
+
+  return s('svg', { width, height, viewBox: `0 0 ${width} ${height}`, 'aria-hidden': 'true' }, [
+    s('polyline', {
+      points: pts.map(([x, y]) => `${x},${y}`).join(' '),
+      fill: 'none',
+      stroke: 'var(--spark)',
+      'stroke-width': 1.5,
+      'stroke-linejoin': 'round',
+      'stroke-linecap': 'round',
+    }),
+    s('circle', {
+      cx: last[0],
+      cy: last[1],
+      r: 3,
+      fill: 'var(--accent)',
+      stroke: 'var(--surface-1)',
+      'stroke-width': 2,
+    }),
+  ])
+}
+
+// ===== ui.js =====
+// ---------- KPI-плитка ----------
+
+function statTile({ label, value, delta, deltaLabel = '', spark }) {
+  const deltaText = fmtDelta(delta)
+  const main = h('div', { class: 'tile-main' }, [
+    h('div', { class: 'tile-label', text: label }),
+    h('div', { class: 'tile-value', title: fmtFull(value), text: fmtCompact(value) }),
+    deltaText &&
+      h('div', { class: delta >= 0 ? 'tile-delta up' : 'tile-delta down' }, [
+        h('span', { 'aria-hidden': 'true', text: delta >= 0 ? '▲' : '▼' }),
+        ' ' + deltaText + ' ',
+        deltaLabel && h('span', { class: 'tile-delta-label', text: deltaLabel }),
+      ]),
+  ])
+  const sp = spark && spark.length >= 2 ? sparkline({ values: spark }) : null
+  if (sp) sp.setAttribute('class', 'tile-spark')
+  return h('div', { class: 'card tile' }, [main, sp])
+}
+
+// ---------- карточка графика ----------
+
+function chartCard({ title, subtitle = '', controls = [], wide = false }, children) {
+  return h('section', { class: wide ? 'card chart-card wide' : 'card chart-card' }, [
+    h('header', { class: 'chart-card-head' }, [
+      h('div', {}, [
+        h('h3', { class: 'chart-card-title', text: title }),
+        subtitle && h('p', { class: 'chart-card-subtitle', text: subtitle }),
+      ]),
+      h('div', { class: 'chart-card-controls' }, controls),
+    ]),
+    children,
+  ])
+}
+
+// выпадающий список показателей/разбивок в шапке карточки
+function selectBox({ options, value, ariaLabel, onChange }) {
+  return h(
+    'select',
+    {
+      'aria-label': ariaLabel,
+      value: String(value),
+      onchange: (e) => onChange(e.target.value),
+    },
+    options.map((o) => h('option', { value: String(o.value), text: o.label })),
+  )
+}
+
+// ---------- легенда ----------
+// обязательна при ≥2 рядах; ключ повторяет форму марки (line/rect)
+
+function legendRow(items) {
+  return h(
+    'div',
+    { class: 'legend', role: 'list' },
+    items.map((it) =>
+      h('span', { class: 'legend-item', role: 'listitem' }, [
+        h('span', {
+          class: it.kind === 'rect' ? 'legend-key rect' : 'legend-key line',
+          style: { background: it.color },
+        }),
+        h('span', { class: 'legend-name', text: it.name }),
+      ]),
+    ),
+  )
+}
+
+// ---------- таблица-двойник ----------
+// каждое значение дэшборда достижимо и без графиков
+
+function dataTable({ columns, rows }) {
+  let limit = 50
+
+  const tbody = h('tbody')
+  const info = h('span', { class: 'muted' })
+  const moreBtn = h('button', {
+    class: 'btn',
+    text: 'Показать ещё',
+    onclick: () => {
+      limit += 200
+      fill()
+    },
+  })
+
+  function fill() {
+    const visible = rows.slice(0, limit)
+    tbody.replaceChildren(
+      ...visible.map((r) =>
+        h(
+          'tr',
+          {},
+          columns.map((c) =>
+            h('td', {
+              class: c.type === 'number' ? 'num' : null,
+              text: fmtCell(r[c.index], c.type),
+            }),
+          ),
+        ),
+      ),
+    )
+    info.textContent = `Показано ${visible.length} из ${rows.length}`
+    moreBtn.hidden = limit >= rows.length
+  }
+
+  function exportCsv() {
+    const esc = (v) => {
+      const str = v == null ? '' : String(v)
+      return /[",\n;]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str
+    }
+    const head = columns.map((c) => esc(c.label)).join(';')
+    const body = rows
+      .map((r) => columns.map((c) => esc(fmtCell(r[c.index], c.type))).join(';'))
+      .join('\n')
+    const blob = new Blob(['\ufeff' + head + '\n' + body], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'data.csv'
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
+  fill()
+
+  return h('div', {}, [
+    h('div', { class: 'table-scroll' }, [
+      h('table', {}, [
+        h('thead', {}, [
+          h(
+            'tr',
+            {},
+            columns.map((c) =>
+              h('th', { class: c.type === 'number' ? 'num' : null, text: c.label }),
+            ),
+          ),
+        ]),
+        tbody,
+      ]),
+    ]),
+    h('div', { class: 'table-footer' }, [
+      info,
+      h('span', { class: 'spacer' }),
+      moreBtn,
+      h('button', { class: 'btn', text: 'Скачать CSV', onclick: exportCsv }),
+    ]),
+  ])
+}
+
+// ---------- панель фильтров ----------
+// Один ряд над всеми графиками: диапазон дат (пресеты списком, свой период —
+// за волосяной чертой в футере) + фильтры по измерениям.
+
+const PRESETS = [
+  { id: 'all', label: 'Весь период' },
+  { id: 'd7', label: 'Последние 7 дней' },
+  { id: 'd30', label: 'Последние 30 дней' },
+  { id: 'd90', label: 'Последние 90 дней' },
+  { id: 'month', label: 'Последний месяц данных' },
+  { id: 'year', label: 'Последний год данных' },
+]
+
+const shortDate = new Intl.DateTimeFormat('ru-RU', {
+  day: '2-digit',
+  month: '2-digit',
+  year: '2-digit',
+})
+
+function presetRange(id, extent) {
+  if (!extent || id === 'all') return { from: null, to: null }
+  const anchor = extent[1]
+  const day = (n) => new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() - n + 1)
+  if (id === 'd7') return { from: day(7), to: null }
+  if (id === 'd30') return { from: day(30), to: null }
+  if (id === 'd90') return { from: day(90), to: null }
+  if (id === 'month') return { from: new Date(anchor.getFullYear(), anchor.getMonth(), 1), to: null }
+  if (id === 'year') return { from: new Date(anchor.getFullYear(), 0, 1), to: null }
+  return { from: null, to: null }
+}
+
+function filterBar({ hasTime, extent, categoryCols, filters, onChange }) {
+  const root = h('div', { class: 'filter-bar' })
+  let open = false
+  let popover = null
+
+  function buttonLabel() {
+    if (filters.preset === 'custom') {
+      const f = filters.from ? shortDate.format(filters.from) : '…'
+      const t = filters.to ? shortDate.format(filters.to) : '…'
+      return `${f} – ${t}`
+    }
+    const p = PRESETS.find((x) => x.id === filters.preset)
+    return p ? p.label : 'Весь период'
+  }
+
+  function onDocDown(e) {
+    if (!e.target.closest('.date-filter')) closePopover()
+  }
+
+  function closePopover() {
+    open = false
+    document.removeEventListener('pointerdown', onDocDown)
+    render()
+  }
+
+  function pickPreset(id) {
+    const { from, to } = presetRange(id, extent)
+    open = false
+    document.removeEventListener('pointerdown', onDocDown)
+    onChange({ ...filters, preset: id, from, to })
+  }
+
+  function applyCustom(fromStr, toStr) {
+    const from = fromStr ? new Date(fromStr + 'T00:00:00') : null
+    let to = toStr ? new Date(toStr + 'T23:59:59') : null
+    if (from && to && to < from) to = null
+    open = false
+    document.removeEventListener('pointerdown', onDocDown)
+    onChange({ ...filters, preset: 'custom', from, to })
+  }
+
+  function setCat(index, value) {
+    const cats = { ...filters.cats }
+    if (value === '') delete cats[index]
+    else cats[index] = value
+    onChange({ ...filters, cats })
+  }
+
+  function buildPopover() {
+    const fromInput = h('input', { type: 'date', 'aria-label': 'С даты' })
+    const toInput = h('input', { type: 'date', 'aria-label': 'По дату' })
+    return h('div', { class: 'popover card' }, [
+      ...PRESETS.map((p) =>
+        h('button', { class: 'preset-row', onclick: () => pickPreset(p.id) }, [
+          h('span', { class: 'check', 'aria-hidden': 'true', text: filters.preset === p.id ? '✓' : '' }),
+          p.label,
+        ]),
+      ),
+      h('div', { class: 'popover-footer' }, [
+        h('div', { class: 'custom-title', text: 'Свой период' }),
+        h('div', { class: 'custom-inputs' }, [
+          fromInput,
+          h('span', { class: 'range-dash', text: '–' }),
+          toInput,
+          h('button', {
+            class: 'btn',
+            text: 'ОК',
+            onclick: () => applyCustom(fromInput.value, toInput.value),
+          }),
+        ]),
+      ]),
+    ])
+  }
+
+  function render() {
+    const hasActive = filters.preset !== 'all' || Object.keys(filters.cats).length > 0
+    const parts = []
+
+    if (hasTime) {
+      popover = open ? buildPopover() : null
+      parts.push(
+        h('div', { class: 'date-filter' }, [
+          h(
+            'button',
+            {
+              class: 'btn',
+              'aria-expanded': String(open),
+              onclick: () => {
+                open = !open
+                if (open) document.addEventListener('pointerdown', onDocDown)
+                else document.removeEventListener('pointerdown', onDocDown)
+                render()
+              },
+            },
+            [h('span', { 'aria-hidden': 'true', text: '📅' }), ' ' + buttonLabel()],
+          ),
+          popover,
+        ]),
+      )
+    }
+
+    for (const c of categoryCols) {
+      parts.push(
+        h('label', { class: 'cat-filter' }, [
+          h('span', { class: 'cat-label', text: c.label }),
+          h(
+            'select',
+            {
+              class: 'combo',
+              value: filters.cats[c.index] == null ? '' : filters.cats[c.index],
+              onchange: (e) => setCat(c.index, e.target.value),
+            },
+            [
+              h('option', { value: '', text: 'Все' }),
+              ...c.values.map((v) => h('option', { value: v, text: v })),
+            ],
+          ),
+        ]),
+      )
+    }
+
+    if (hasActive) {
+      parts.push(
+        h('button', {
+          class: 'btn reset',
+          text: '✕ Сбросить',
+          onclick: () => onChange({ preset: 'all', from: null, to: null, cats: {} }),
+        }),
+      )
+    }
+
+    root.replaceChildren(...parts)
+  }
+
+  render()
+  return root
+}
+
+// ---------- переключатель темы ----------
+// Системная → светлая → тёмная. Выбор хранится в localStorage,
+// index.html применяет его до первого рендера.
+
+const MODES = [
+  { id: 'auto', icon: '◐', title: 'Тема: как в системе' },
+  { id: 'light', icon: '☀️', title: 'Тема: светлая' },
+  { id: 'dark', icon: '🌙', title: 'Тема: тёмная' },
+]
+
+function readTheme() {
+  try {
+    return localStorage.getItem('theme') || 'auto'
+  } catch {
+    return 'auto'
+  }
+}
+
+function themeToggle() {
+  let current = readTheme()
+  const btn = h('button', { class: 'btn theme-btn' })
+
+  function paint() {
+    const mode = MODES.find((m) => m.id === current) || MODES[0]
+    btn.textContent = mode.icon
+    btn.title = mode.title
+  }
+
+  function apply(mode) {
+    current = mode
+    try {
+      if (mode === 'auto') {
+        delete document.documentElement.dataset.theme
+        localStorage.removeItem('theme')
+      } else {
+        document.documentElement.dataset.theme = mode
+        localStorage.setItem('theme', mode)
+      }
+    } catch {
+      /* приватный режим — тема просто не запомнится */
+    }
+    paint()
+  }
+
+  btn.addEventListener('click', () => {
+    const i = MODES.findIndex((m) => m.id === current)
+    apply(MODES[(i + 1) % MODES.length].id)
+  })
+
+  paint()
+  return btn
+}
+
+// ===== app.js =====
+// ============================================================
+// состояние
+// ============================================================
+
+const state = {
+  status: 'idle', // idle | loading | refreshing | ready | error
+  error: '',
+  table: null,
+  analysis: null,
+  source: null, // { kind: 'sheet', ref: {id,gid} } | { kind: 'file', name }
+  urlInput: '',
+  loadedAt: null,
+  filters: { preset: 'all', from: null, to: null, cats: {} },
+  barMeasureSel: {}, // colIndex -> measure key
+  splitDim: null,
+  splitMeasure: COUNT_KEY,
+}
+
+const root = document.getElementById('app')
+let dashHost = null // контейнер дэшборда: перерисовывается без пересборки шапки
+
+// ============================================================
+// загрузка данных
+// ============================================================
+
+async function loadSheet(input) {
+  const parsed = parseSheetUrl(input)
+  if (!parsed) {
+    state.error =
+      'Это не похоже на ссылку на Google Таблицу. Нужна ссылка вида docs.google.com/spreadsheets/d/…'
+    state.status = state.table ? 'ready' : 'error'
+    render()
+    return
+  }
+  state.status = state.table ? 'refreshing' : 'loading'
+  state.error = ''
+  render()
+  try {
+    const table = await fetchSheet(parsed)
+    adoptTable(table, { kind: 'sheet', ref: parsed })
+    updateQuery((q) => q.set('sheet', input.trim()))
+    store('lastSheetUrl', input.trim())
+  } catch (e) {
+    state.error = errorMessage(e)
+    state.status = state.table ? 'ready' : 'error'
+  }
+  render()
+}
+
+async function onFile(file) {
+  if (!file) return
+  state.status = state.table ? 'refreshing' : 'loading'
+  state.error = ''
+  render()
+  try {
+    const table = await loadFile(file)
+    if (!table.cols.length) throw new Error('EMPTY')
+    adoptTable(table, { kind: 'file', name: file.name })
+    updateQuery((q) => q.delete('sheet'))
+  } catch (e) {
+    state.error =
+      e.message === 'EMPTY'
+        ? 'Файл пустой или не удалось найти в нём таблицу.'
+        : e.message === 'XLSX_CDN'
+          ? 'Не удалось загрузить модуль для Excel (нужен интернет). Сохраните файл как CSV и попробуйте снова.'
+          : 'Не удалось разобрать файл. Поддерживаются CSV, TSV и Excel (.xlsx).'
+    state.status = state.table ? 'ready' : 'error'
+  }
+  render()
+}
+
+function adoptTable(table, source) {
+  state.table = table
+  state.analysis = analyzeTable(table)
+  state.source = source
+  state.loadedAt = new Date()
+  state.status = 'ready'
+  state.error = ''
+  // новый набор данных — сбрасываем фильтры и выборы
+  state.filters = { preset: 'all', from: null, to: null, cats: {} }
+  state.barMeasureSel = {}
+  state.splitDim = null
+  state.splitMeasure = defaultMeasureKey()
+}
+
+function loadDemo() {
+  adoptTable(demoTable(), { kind: 'file', name: 'Демо-данные: продажи' })
+  updateQuery((q) => {
+    q.delete('sheet')
+    q.set('demo', '1')
+  })
+  render()
+}
+
+function changeSource() {
+  state.status = 'idle'
+  state.table = null
+  state.analysis = null
+  state.source = null
+  state.error = ''
+  render()
+}
+
+function store(key, value) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    /* приватный режим — просто не запомним */
+  }
+}
+
+// history.replaceState на file:// бросает SecurityError — адресная строка
+// там всё равно не нужна, поэтому просто молча пропускаем
+function updateQuery(mutate) {
+  try {
+    const u = new URL(location.href)
+    mutate(u.searchParams)
+    history.replaceState(null, '', u)
+  } catch {
+    /* открыт как локальный файл — пропускаем */
+  }
+}
+
+function restore(key) {
+  try {
+    return localStorage.getItem(key) || ''
+  } catch {
+    return ''
+  }
+}
+
+// ============================================================
+// производные данные (аналог computed из Vue-версии)
+// ============================================================
+
+function defaultMeasureKey() {
+  const ms = (state.analysis && state.analysis.measures) || []
+  return ms.length > 1 ? ms[1].key : COUNT_KEY
+}
+
+function measureByKey(key) {
+  const ms = state.analysis.measures
+  return ms.find((m) => m.key === key) || ms[0]
+}
+
+function computeView() {
+  const a = state.analysis
+  const rows = state.table.rows
+
+  const extent = a.timeCol ? dateExtent(rows, a.timeCol.index) : null
+  const filteredRows = applyFilters(rows, a.timeCol, state.filters)
+  const filteredExtent = a.timeCol ? dateExtent(filteredRows, a.timeCol.index) : null
+  const unit = filteredExtent ? chooseUnit(filteredExtent[0], filteredExtent[1]) : null
+
+  let timeline = null
+  if (a.timeCol && unit) {
+    timeline = trimPartialEdges(
+      buildTimeline(filteredRows, a.timeCol.index, a.measures, unit),
+      unit,
+      filteredExtent,
+    )
+  }
+
+  const kpis = computeKpis(filteredRows, timeline, a.measures, 6)
+
+  // малые кратные: динамика каждого измерения (одиночный ряд — слот 1 + вуаль)
+  let timeCharts = []
+  if (timeline && timeline.length >= 2) {
+    const xs = timeline.map((b) => b.t)
+    timeCharts = a.measures.slice(0, 6).map((m) => ({
+      key: m.key,
+      title: m.label,
+      xs,
+      series: [
+        { name: m.label, color: 'var(--series-1)', values: timeline.map((b) => b.values[m.key]) },
+      ],
+    }))
+  }
+
+  // бары по категориям (топ-10 + «Прочее»), выбор измерения в шапке карточки
+  const barCards = a.categoryCols.slice(0, 2).map((c) => {
+    const selKey = state.barMeasureSel[c.index] || defaultMeasureKey()
+    const measure = measureByKey(selKey)
+    return {
+      col: c,
+      selKey,
+      measure,
+      items: aggregateByCategory(filteredRows, c.index, measure, 10),
+    }
+  })
+
+  // динамика по категориям: топ-5 цветных + «Прочее» серым; цвета закреплены
+  // за категориями по полному набору данных — фильтры не перекрашивают
+  let splitChart = null
+  const splitDimIndex =
+    state.splitDim != null
+      ? state.splitDim
+      : a.categoryCols.length
+        ? a.categoryCols[0].index
+        : null
+  if (a.timeCol && unit && splitDimIndex != null && timeline && timeline.length >= 2) {
+    const measure = measureByKey(state.splitMeasure)
+    const slots = categorySlots(rows, splitDimIndex, measure, 5)
+    let { xs, series } = timelineByCategory(
+      filteredRows,
+      a.timeCol.index,
+      splitDimIndex,
+      measure,
+      unit,
+      slots,
+    )
+    // синхронизируем с обрезанной динамикой: без неполных крайних бакетов
+    const t0 = timeline[0].t
+    const t1 = timeline[timeline.length - 1].t
+    const keep = xs.map((t, i) => (t >= t0 && t <= t1 ? i : -1)).filter((i) => i >= 0)
+    if (keep.length < xs.length) {
+      xs = keep.map((i) => xs[i])
+      series = series.map((ser) => ({ ...ser, values: keep.map((i) => ser.values[i]) }))
+    }
+    const colored = series.map((ser) => ({
+      ...ser,
+      color: ser.slot === 'other' ? 'var(--series-other)' : `var(--series-${ser.slot})`,
+    }))
+    splitChart = {
+      measure,
+      dimIndex: splitDimIndex,
+      xs,
+      series: colored,
+      legend: colored.map((ser) => ({ name: ser.name, color: ser.color, kind: 'line' })),
+    }
+  }
+
+  return { extent, filteredRows, unit, timeline, kpis, timeCharts, barCards, splitChart }
+}
+
+// ============================================================
+// рендер
+// ============================================================
+
+function errorBox(message) {
+  return h('p', { class: 'error-box', role: 'alert', text: message })
+}
+
+function topbar() {
+  const right = []
+  if (state.status === 'ready' || state.status === 'refreshing') {
+    if (state.source && state.source.kind === 'sheet') {
+      right.push(
+        h('a', {
+          class: 'btn',
+          href: sheetLink(state.source.ref),
+          target: '_blank',
+          rel: 'noopener',
+          text: 'Открыть таблицу ↗',
+        }),
+        h('button', {
+          class: 'btn',
+          disabled: state.status === 'refreshing',
+          text: '⟳ Обновить',
+          onclick: () => loadSheet(state.urlInput),
+        }),
+      )
+    } else if (state.source) {
+      right.push(
+        h('span', { class: 'file-badge', title: state.source.name, text: '📄 ' + state.source.name }),
+      )
+    }
+    right.push(h('button', { class: 'btn', text: 'Сменить источник', onclick: changeSource }))
+  }
+  right.push(themeToggle())
+
+  return h('header', { class: 'topbar' }, [
+    h('div', { class: 'brand' }, [
+      h('span', { 'aria-hidden': 'true', text: '📊' }),
+      h('span', { class: 'brand-name', text: 'Sheets Dashboard' }),
+    ]),
+    h('div', { class: 'topbar-right' }, right),
+  ])
+}
+
+function landing() {
+  const input = h('input', {
+    class: 'text-input',
+    type: 'url',
+    placeholder: 'https://docs.google.com/spreadsheets/d/…',
+    'aria-label': 'Ссылка на Google Таблицу',
+    value: state.urlInput,
+  })
+  input.addEventListener('input', () => {
+    state.urlInput = input.value
+  })
+
+  const form = h(
+    'form',
+    {
+      class: 'url-row',
+      onsubmit: (e) => {
+        e.preventDefault()
+        loadSheet(input.value)
+      },
+    },
+    [
+      input,
+      h('button', {
+        class: 'btn primary',
+        type: 'submit',
+        disabled: state.status === 'loading',
+        text: state.status === 'loading' ? 'Загрузка…' : 'Построить',
+      }),
+    ],
+  )
+
+  const fileInput = h('input', {
+    type: 'file',
+    accept: '.csv,.tsv,.txt,.xlsx,.xls',
+    class: 'visually-hidden',
+    onchange: (e) => {
+      const file = e.target.files[0]
+      e.target.value = ''
+      onFile(file)
+    },
+  })
+
+  const drop = h('label', { class: 'drop-zone' }, [
+    fileInput,
+    h('span', { class: 'drop-icon', 'aria-hidden': 'true', text: '📄' }),
+    h('span', {}, [
+      'Перетащите файл CSV или Excel сюда — или ',
+      h('u', { text: 'выберите файл' }),
+    ]),
+  ])
+  drop.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    drop.classList.add('over')
+  })
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'))
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault()
+    drop.classList.remove('over')
+    onFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0])
+  })
+
+  return h('main', { class: 'landing' }, [
+    h('div', { class: 'chips' }, [
+      h('span', { class: 'chip', text: 'Google Таблицы' }),
+      h('span', { class: 'chip', text: 'CSV' }),
+      h('span', { class: 'chip', text: 'Excel' }),
+    ]),
+    h('h1', {}, ['Дэшборд из вашей таблицы — ', h('span', { class: 'grad', text: 'за секунды' })]),
+    h('p', {
+      class: 'landing-sub',
+      text: 'Вставьте ссылку или перетащите файл. Типы колонок определятся сами: KPI, динамика, разбивки по категориям и таблица.',
+    }),
+    h('div', { class: 'card landing-card' }, [
+      form,
+      h('p', {
+        class: 'hint',
+        text: 'Таблица должна быть доступна по ссылке: Файл → Настройки доступа → «Все, у кого есть ссылка» → Читатель.',
+      }),
+      h('div', { class: 'divider' }, [h('span', { text: 'или' })]),
+      drop,
+      state.error && errorBox(state.error),
+    ]),
+    h('p', {
+      class: 'privacy',
+      text: '🔒 Данные не отправляются на сервер — всё считается в вашем браузере.',
+    }),
+    h('button', { class: 'btn demo-btn', text: 'Попробовать на демо-данных', onclick: loadDemo }),
+  ])
+}
+
+function dashboard() {
+  const a = state.analysis
+  const stamp = state.loadedAt
+    ? new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(state.loadedAt)
+    : ''
+
+  const catFilterCols = a.categoryCols.slice(0, 3).map((c) => ({
+    index: c.index,
+    label: c.label,
+    values: uniqueValues(state.table.rows, c.index),
+  }))
+
+  const bar = filterBar({
+    hasTime: !!a.timeCol,
+    extent: a.timeCol ? dateExtent(state.table.rows, a.timeCol.index) : null,
+    categoryCols: catFilterCols,
+    filters: state.filters,
+    // фильтр меняет и подпись периода в панели, и весь дэшборд — проще
+    // перерисовать экран целиком, чем сверять что изменилось
+    onChange: (next) => {
+      state.filters = next
+      render()
+    },
+  })
+
+  dashHost = h('div', { class: state.status === 'refreshing' ? 'dash refreshing' : 'dash' })
+
+  const main = h('main', { class: 'dash-wrap' }, [
+    state.error && errorBox(state.error),
+    h('div', {
+      class: 'dash-meta',
+      text:
+        `${fmtFull(state.table.rows.length)} строк · ${state.table.cols.length} колонок` +
+        (stamp ? ` · загружено в ${stamp}` : ''),
+    }),
+    bar,
+    dashHost,
+  ])
+
+  renderDash()
+  return main
+}
+
+function renderDash() {
+  if (!dashHost) return
+  const a = state.analysis
+  const view = computeView()
+  const parts = []
+
+  if (view.filteredRows.length === 0) {
+    parts.push(
+      h('div', {
+        class: 'card empty-slice',
+        text: 'По выбранным фильтрам нет ни одной строки.',
+      }),
+    )
+  }
+
+  const deltaLabel = view.unit ? 'к пред. ' + unitLabel(view.unit) : ''
+  parts.push(
+    h(
+      'div',
+      { class: 'kpi-row' },
+      view.kpis.map((k) =>
+        statTile({ label: k.label, value: k.total, delta: k.delta, deltaLabel, spark: k.spark }),
+      ),
+    ),
+  )
+
+  const measureOptions = a.measures.map((m) => ({ value: m.key, label: m.label }))
+
+  if (view.timeCharts.length) {
+    parts.push(
+      h(
+        'div',
+        { class: 'charts-grid' },
+        view.timeCharts.map((c) =>
+          chartCard(
+            { title: c.title, subtitle: unitLabelAgg(view.unit) },
+            lineChart({ xs: c.xs, series: c.series, unit: view.unit, ariaLabel: c.title }),
+          ),
+        ),
+      ),
+    )
+  }
+
+  if (view.splitChart) {
+    const sc = view.splitChart
+    const title = sc.measure.label + ' по категориям'
+    const controls = [
+      selectBox({
+        options: measureOptions,
+        value: state.splitMeasure,
+        ariaLabel: 'Показатель',
+        onChange: (v) => {
+          state.splitMeasure = v
+          renderDash()
+        },
+      }),
+    ]
+    if (a.categoryCols.length > 1) {
+      controls.push(
+        selectBox({
+          options: a.categoryCols.map((c) => ({ value: c.index, label: c.label })),
+          value: sc.dimIndex,
+          ariaLabel: 'Разбивка',
+          onChange: (v) => {
+            state.splitDim = +v
+            renderDash()
+          },
+        }),
+      )
+    }
+    parts.push(
+      chartCard(
+        {
+          title,
+          subtitle:
+            unitLabelAgg(view.unit) +
+            (sc.series.some((x) => x.slot === 'other') ? ' · топ-5 + Прочее' : ''),
+          controls,
+          wide: true,
+        },
+        [
+          lineChart({ xs: sc.xs, series: sc.series, unit: view.unit, height: 280, ariaLabel: title }),
+          legendRow(sc.legend),
+        ],
+      ),
+    )
+  }
+
+  if (view.barCards.length) {
+    parts.push(
+      h(
+        'div',
+        { class: 'charts-grid' },
+        view.barCards.map((b) =>
+          chartCard(
+            {
+              title: b.measure.label + ' — ' + b.col.label,
+              subtitle: b.items.some((i) => i.other) ? 'топ-10 + Прочее' : '',
+              controls: [
+                selectBox({
+                  options: measureOptions,
+                  value: b.selKey,
+                  ariaLabel: 'Показатель',
+                  onChange: (v) => {
+                    state.barMeasureSel[b.col.index] = v
+                    renderDash()
+                  },
+                }),
+              ],
+            },
+            barChart({
+              items: b.items,
+              ariaLabel: b.measure.label + ' по ' + b.col.label,
+            }),
+          ),
+        ),
+      ),
+    )
+  }
+
+  parts.push(
+    chartCard(
+      { title: 'Данные', subtitle: 'полный срез с учётом фильтров', wide: true },
+      dataTable({ columns: a.columns, rows: view.filteredRows }),
+    ),
+  )
+
+  dashHost.className = state.status === 'refreshing' ? 'dash refreshing' : 'dash'
+  setChildren(dashHost, parts)
+}
+
+function render() {
+  const showLanding =
+    state.status === 'idle' || state.status === 'loading' || state.status === 'error'
+  if (showLanding) dashHost = null
+  setChildren(root, [topbar(), showLanding ? landing() : dashboard()])
+}
+
+// ============================================================
+// старт
+// ============================================================
+
+const query = new URL(location.href).searchParams
+const fromQuery = query.get('sheet')
+if (fromQuery) {
+  state.urlInput = fromQuery
+  render()
+  loadSheet(fromQuery)
+} else if (query.get('demo')) {
+  loadDemo()
+} else {
+  state.urlInput = restore('lastSheetUrl')
+  render()
+}
+})()
+    </script>
+  </body>
+</html>

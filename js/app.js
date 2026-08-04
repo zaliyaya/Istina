@@ -62,9 +62,7 @@ async function loadSheet(input) {
   try {
     const table = await fetchSheet(parsed)
     adoptTable(table, { kind: 'sheet', ref: parsed })
-    const u = new URL(location.href)
-    u.searchParams.set('sheet', input.trim())
-    history.replaceState(null, '', u)
+    updateQuery((q) => q.set('sheet', input.trim()))
     store('lastSheetUrl', input.trim())
   } catch (e) {
     state.error = errorMessage(e)
@@ -82,9 +80,7 @@ async function onFile(file) {
     const table = await loadFile(file)
     if (!table.cols.length) throw new Error('EMPTY')
     adoptTable(table, { kind: 'file', name: file.name })
-    const u = new URL(location.href)
-    u.searchParams.delete('sheet')
-    history.replaceState(null, '', u)
+    updateQuery((q) => q.delete('sheet'))
   } catch (e) {
     state.error =
       e.message === 'EMPTY'
@@ -113,10 +109,10 @@ function adoptTable(table, source) {
 
 function loadDemo() {
   adoptTable(demoTable(), { kind: 'file', name: 'Демо-данные: продажи' })
-  const u = new URL(location.href)
-  u.searchParams.delete('sheet')
-  u.searchParams.set('demo', '1')
-  history.replaceState(null, '', u)
+  updateQuery((q) => {
+    q.delete('sheet')
+    q.set('demo', '1')
+  })
   render()
 }
 
@@ -134,6 +130,18 @@ function store(key, value) {
     localStorage.setItem(key, value)
   } catch {
     /* приватный режим — просто не запомним */
+  }
+}
+
+// history.replaceState на file:// бросает SecurityError — адресная строка
+// там всё равно не нужна, поэтому просто молча пропускаем
+function updateQuery(mutate) {
+  try {
+    const u = new URL(location.href)
+    mutate(u.searchParams)
+    history.replaceState(null, '', u)
+  } catch {
+    /* открыт как локальный файл — пропускаем */
   }
 }
 
