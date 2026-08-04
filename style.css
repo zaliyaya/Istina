@@ -1,0 +1,868 @@
+/* ============================================================
+   Тема: валидированная палитра дата-виза (light + dark)
+   Роли определены один раз; компоненты пишутся против ролей.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* Поверхности и «ink» */
+  --page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --delta-good: #006300;
+  --delta-bad: #d03b3b;
+  --hover-wash: rgba(11, 11, 11, 0.05);
+
+  /* Категориальные слоты (фиксированный порядок, никогда не циклится) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-other: #898781;
+
+  --accent: var(--series-1);
+  --spark: #c3c2b7;
+
+  --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 4px 16px rgba(11, 11, 11, 0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --delta-good: #0ca30c;
+    --delta-bad: #d03b3b;
+    --hover-wash: rgba(255, 255, 255, 0.06);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --series-other: #898781;
+
+    --spark: #52514e;
+    --shadow: none;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --delta-good: #0ca30c;
+  --delta-bad: #d03b3b;
+  --hover-wash: rgba(255, 255, 255, 0.06);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-other: #898781;
+
+  --spark: #52514e;
+  --shadow: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Общий хром
+   ============================================================ */
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-1);
+  cursor: pointer;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.btn:hover {
+  background: var(--hover-wash);
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+.btn.primary:hover {
+  filter: brightness(1.06);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.text-input {
+  padding: 9px 12px;
+  border: 1px solid var(--axis);
+  border-radius: 8px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  width: 100%;
+}
+.text-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+select.combo {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-1);
+  max-width: 220px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ============================================================
+   Каркас страницы
+   ============================================================ */
+
+#app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px 48px;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -20px 8px;
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--page) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.file-badge {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.theme-btn {
+  width: 36px;
+  justify-content: center;
+  padding: 7px 0;
+}
+
+/* ============================================================
+   Лендинг
+   ============================================================ */
+
+.landing {
+  display: block;
+  max-width: 620px;
+  margin: 9vh auto 0;
+  text-align: center;
+}
+.chips {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.chip {
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.landing h1 {
+  font-size: 34px;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+  margin: 0 0 12px;
+}
+.grad {
+  background: linear-gradient(90deg, var(--series-1), var(--series-7));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.landing-sub {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin: 0 auto 26px;
+  max-width: 480px;
+}
+.privacy {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 18px 0 0;
+}
+.landing-card {
+  padding: 24px;
+  text-align: left;
+}
+.url-row {
+  display: flex;
+  gap: 8px;
+}
+.hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 10px 0 0;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--grid);
+}
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 26px 16px;
+  border: 1.5px dashed var(--axis);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+}
+.drop-zone.over {
+  border-color: var(--accent);
+  background: var(--hover-wash);
+}
+.drop-icon {
+  font-size: 22px;
+}
+.demo-btn {
+  margin-top: 10px;
+  color: var(--text-secondary);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.error-box {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--delta-bad) 8%, transparent);
+  color: var(--delta-bad);
+  font-size: 13px;
+}
+
+/* ============================================================
+   Сетка дэшборда
+   ============================================================ */
+
+.dash-wrap {
+  display: block;
+  margin-top: 4px;
+}
+.dash-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: opacity 0.2s;
+}
+.dash.refreshing {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.empty-slice {
+  padding: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 16px;
+}
+.wide {
+  width: 100%;
+}
+
+/* ============================================================
+   Панель фильтров
+   ============================================================ */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.date-filter {
+  position: relative;
+}
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 240px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.preset-row:hover {
+  background: var(--hover-wash);
+}
+.check {
+  width: 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.popover-footer {
+  border-top: 1px solid var(--grid); /* волосяная черта перед «своим периодом» */
+  margin-top: 6px;
+  padding: 10px 10px 6px;
+}
+.custom-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.custom-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.custom-inputs input {
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-1);
+  font-size: 12px;
+  width: 118px;
+}
+/* тире между датами — не путать с .dash, контейнером дэшборда */
+.range-dash {
+  color: var(--text-muted);
+}
+.cat-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reset {
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   KPI-плитка
+   ============================================================ */
+
+.tile {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.tile-main {
+  min-width: 0;
+}
+.tile-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* крупное число — пропорциональные цифры (без tabular-nums) */
+.tile-value {
+  font-size: clamp(21px, 5.5vw, 26px);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 2px;
+  color: var(--text-primary);
+}
+.tile-delta {
+  font-size: 12px;
+  margin-top: 2px;
+}
+.tile-delta.up {
+  color: var(--delta-good);
+}
+.tile-delta.down {
+  color: var(--delta-bad);
+}
+.tile-delta-label {
+  color: var(--text-muted);
+}
+.tile-spark {
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Карточка графика
+   ============================================================ */
+
+.chart-card {
+  padding: 16px;
+  min-width: 0;
+}
+.chart-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+.chart-card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.chart-card-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.chart-card-controls {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.chart-card-controls select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-1);
+  font-size: 12px;
+  max-width: 180px;
+}
+
+/* ============================================================
+   Линейный график
+   ============================================================ */
+
+.line-chart {
+  position: relative;
+  outline-offset: 2px;
+}
+.empty {
+  margin: 24px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.tick-text text {
+  font-size: 11px;
+  fill: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.end-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text-secondary);
+}
+.tooltip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 8px 10px;
+  min-width: 120px;
+  max-width: 220px;
+}
+.tooltip-title {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+/* ключ ряда — короткий штрих цвета серии, не квадрат */
+.tooltip-key {
+  width: 12px;
+  height: 2.5px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+/* значение — главное, имя ряда — вторично */
+.tooltip-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.tooltip-name {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Легенда
+   ============================================================ */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.legend-key.line {
+  width: 14px;
+  height: 3px;
+  border-radius: 1.5px;
+}
+.legend-key.rect {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   Горизонтальные бары
+   ============================================================ */
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+}
+.bar-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.bar-row.hovered {
+  background: var(--hover-wash);
+}
+.bar-label {
+  flex: 0 0 132px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+.bar-track {
+  position: relative;
+  flex: 1;
+  height: 20px; /* ≤ 24px */
+  margin-right: 56px; /* место под подпись значения */
+}
+.bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 0 4px 4px 0; /* скругление только на конце с данными */
+  transition: opacity 0.1s;
+}
+.bar-fill.neg {
+  border-radius: 4px 0 0 4px;
+}
+.bar-row.hovered .bar-fill {
+  opacity: 0.85;
+}
+.bar-value {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.bar-tooltip {
+  position: absolute;
+  z-index: 5;
+  right: 8px;
+  top: -26px;
+  pointer-events: none;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 5px 9px;
+  font-size: 12px;
+  max-width: 90%;
+}
+.bar-tooltip[hidden] {
+  display: none;
+}
+.bar-tooltip-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.bar-tooltip-name {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Таблица данных
+   ============================================================ */
+
+.table-scroll {
+  overflow: auto;
+  max-height: 440px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+}
+.table-scroll th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-1);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--axis);
+  white-space: nowrap;
+}
+.table-scroll td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--grid);
+  color: var(--text-primary);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* числа выравниваются по правому краю, tabular-nums — только в колонках */
+.table-scroll th.num,
+.table-scroll td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.table-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.table-footer .muted {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.table-footer .spacer {
+  flex: 1;
+}
+
+/* ============================================================
+   Мобильные
+   ============================================================ */
+
+@media (max-width: 640px) {
+  #app {
+    padding: 0 12px 32px;
+  }
+  .topbar {
+    margin: 0 -12px 8px;
+    padding: 8px 12px;
+  }
+  .btn {
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+  .file-badge {
+    display: none;
+  }
+  .landing {
+    margin-top: 4vh;
+  }
+  .landing h1 {
+    font-size: 26px;
+  }
+  .landing-card {
+    padding: 18px;
+  }
+  .url-row {
+    flex-direction: column;
+  }
+  .kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .charts-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .dash {
+    gap: 12px;
+  }
+  .tile {
+    padding: 12px 14px;
+  }
+  .tile-spark {
+    display: none; /* на узких плитках спарклайн не читается */
+  }
+  .bar-label {
+    flex-basis: 96px;
+  }
+  .bar-track {
+    margin-right: 48px;
+  }
+}
