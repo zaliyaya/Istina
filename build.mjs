@@ -1,101 +1,125 @@
-// Склейка модулей в один автономный dashboard.html.
-// ES-модули не грузятся по file://, поэтому весь код кладётся в обычный
-// <script> внутри IIFE, а стили — в <style>.
+// Сборка отчёта в один автономный файл.
+// Всё встраивается внутрь: React, рантайм, чтение Excel, история и данные.
 // Запуск: node build.mjs
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 
-const ORDER = [
-  'format.js',
-  'scale.js',
-  'dom.js',
-  'fileLoad.js',
-  'analyze.js',
-  'demo.js',
-  'gviz.js',
-  'charts.js',
-  'ui.js',
-  'app.js',
-]
+const read = (p) => readFileSync(p, 'utf8')
 
-const strip = (src) =>
-  src
-    // import { a, b } from './x.js'  /  import x from 'y'
-    .replace(/import\s+[\w*{}\n\s,]+\s+from\s+['"][^'"]+['"];?/g, '')
-    .replace(/^export\s+/gm, '')
-    .trim()
+// ---------- исходные данные ----------
+// История 2026 года из ручного отчёта + недели из настоящих выгрузок.
 
-// Excel: динамический import() модуля тоже не работает по file://,
-// поэтому классическая библиотека подключается обычным <script>.
-const XLSX_SHIM = `
-const XLSX_URL = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
-let xlsxPromise = null
-function loadXlsxGlobal() {
-  if (window.XLSX) return Promise.resolve(window.XLSX)
-  if (!xlsxPromise) {
-    xlsxPromise = new Promise((resolve, reject) => {
-      const tag = document.createElement('script')
-      tag.src = XLSX_URL
-      tag.onload = () => (window.XLSX ? resolve(window.XLSX) : reject(new Error('XLSX_CDN')))
-      tag.onerror = () => reject(new Error('XLSX_CDN'))
-      document.head.append(tag)
+const history = JSON.parse(read('data/history.json'))
+
+const seed = {}
+for (const pos of history.positions) {
+  for (const [week, values] of Object.entries(pos.weeks)) {
+    if (!seed[week]) seed[week] = {}
+    if (!seed[week][pos.section]) seed[week][pos.section] = []
+    seed[week][pos.section].push({
+      category: pos.category,
+      name: pos.name,
+      markup: values.markup ?? null,
+      cost: values.cost ?? null,
+      qty: values.qty ?? null,
+      revenue: values.revenue ?? null,
+      profit: values.profit ?? null,
     })
   }
-  return xlsxPromise
 }
-`.trim()
 
-const parts = ORDER.map((name) => {
-  let code = strip(readFileSync(`js/${name}`, 'utf8'))
-  if (name === 'fileLoad.js') {
-    const before = code
-    code = code.replace('XLSX = await import(XLSX_CDN)', 'XLSX = await loadXlsxGlobal()')
-    if (code === before) throw new Error('не нашёл место подключения xlsx в fileLoad.js')
+// Недели, для которых есть настоящая выгрузка, перекрывают ручной отчёт.
+let overridden = 0
+const uploads = '/mnt/user-data/uploads'
+let uploadFiles = []
+try {
+  uploadFiles = readdirSync(uploads).filter((f) => f.startsWith('Отчет_о_продажах_с'))
+} catch {
+  /* выгрузок под рукой нет — собираем только на истории */
+}
+if (uploadFiles.length) {
+  const { readXlsx } = await import('../app/js/xlsxread.js')
+  const { parseWeeklySheet } = await import('../app/js/parse.js')
+  for (const file of uploadFiles) {
+    const buf = readFileSync(`${uploads}/${file}`)
+    const sheets = await readXlsx(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
+    const parsed = parseWeeklySheet(sheets[0].rows, file)
+    if (!parsed.section) continue
+    if (!seed[parsed.week]) seed[parsed.week] = {}
+    if (seed[parsed.week][parsed.section]) overridden++
+    seed[parsed.week][parsed.section] = parsed.rows.map((r) => ({
+      category: r.category,
+      name: r.name,
+      markup: r.markup ?? null,
+      cost: r.cost ?? null,
+      qty: r.qty ?? null,
+      revenue: r.revenue ?? null,
+      profit: r.profit ?? null,
+    }))
   }
-  return `// ===== ${name} =====\n${code}`
-})
+}
 
-const css = readFileSync('css/style.css', 'utf8').trim()
-const template = readFileSync('index.html', 'utf8')
+// Состав групп бара переносим из ручного отчёта: в выгрузке групп нет.
+const groupSeed = {}
+for (const [category, info] of Object.entries(history.barGroups || {})) {
+  if (info.section === 'bar' && info.group) groupSeed[category] = info.group
+}
 
-const head = template
-  .split('<link rel="stylesheet"')[0]
-  .replace(/^[\s\S]*?<head>\n/, '')
-  .trimEnd()
+// Дубль шаблона текстом для рантайма: внутри <script> разметку никто не
+// разбирает, поэтому циклы внутри <select> доживают до сборки.
+const rawTemplate = read('src/template.html').split('</script>').join('<\\/script>')
 
-const html = `<!doctype html>
+// ---------- сборка страницы ----------
+
+const html = `<!DOCTYPE html>
 <html lang="ru">
-  <head>
-${head}
-    <style>
-${css}
-    </style>
-    <script>
-      // применяем сохранённую тему до первого рендера, чтобы не мигало
-      try {
-        var t = localStorage.getItem('theme')
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
-      } catch (e) {}
-    </script>
-  </head>
-  <body>
-    <div id="app"></div>
-    <noscript>
-      <p style="padding: 24px">Для работы дэшборда нужен включённый JavaScript.</p>
-    </noscript>
-    <script>
-;(function () {
-'use strict'
-
-// ===== подключение SheetJS (только когда открывают .xlsx) =====
-${XLSX_SHIM}
-
-${parts.join('\n\n')}
-})()
-    </script>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Истина · Анализ продаж</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#127863;</text></svg>">
+<script>
+/* React 18 (UMD, production) — встроен, чтобы файл работал без интернета */
+${read('vendor/react.js')}
+</script>
+<script>
+${read('vendor/react-dom.js')}
+</script>
+<script>
+/* Чтение .xlsx своими силами: распаковка ZIP и разбор XML, без библиотек */
+${read('src/xlsxread.js')}
+</script>
+<script>
+${read('src/xlsx-shim.js')}
+</script>
+<script>
+/* Файлу нечего догружать по сети. Пустая карта ресурсов отключает повторное
+   чтение документа через fetch — на file:// оно всё равно запрещено. */
+window.__resources = {}
+</script>
+<script>
+${read('vendor/support.js')}
+</script>
+<script type="application/json" id="seed-data">${JSON.stringify(seed)}</script>
+<script type="application/json" id="group-seed">${JSON.stringify(groupSeed)}</script>
+</head>
+<body>
+<x-dc>
+${read('src/template.html')}
+</x-dc>
+<script type="text/plain" id="raw-template">${rawTemplate}</script>
+<script>
+${read('src/boot.js')}
+</script>
+${read('src/props.txt')}
+${read('src/app.js')}
+</script>
+</body>
 </html>
 `
 
-writeFileSync('dashboard.html', html)
-const kb = (html.length / 1024).toFixed(0)
-console.log(`dashboard.html собран: ${kb} КБ, модулей — ${ORDER.length}`)
+writeFileSync('отчет.html', html)
+console.log(
+  `отчет.html собран: ${(html.length / 1024 / 1024).toFixed(2)} МБ · ` +
+    `недель ${Object.keys(seed).length} · заменено выгрузками ${overridden} · ` +
+    `категорий бара с группой ${Object.keys(groupSeed).length}`,
+)
