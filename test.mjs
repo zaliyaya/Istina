@@ -280,6 +280,23 @@ const gridRows2 = [...w9.document.querySelectorAll('div')].filter(
 const plusQty = gridRows2.map(cellsOf).find((c) => /Безлимитный Aperol Spritz 250мл$/.test(c[0]) && /^(\+|Плюс)/.test(c[0]))
 ok(plusQty && Number(plusQty[1].replace(/\s/g, '')) > 0, 'в штуках у комплиментов есть значения', plusQty ? plusQty.slice(0, 4).join('/') : '—')
 
+// ---------- 10. предупреждение о неполной выгрузке ----------
+console.log('\n[10] неполная выгрузка видна в журнале')
+const w10 = open(null)
+await wait(900)
+btn(w10, 'Данные').dispatchEvent(new w10.Event('click', { bubbles: true }))
+await wait(200)
+const barFile = readdirSync(UP).find((f) => f.includes('17_08_2026') && f.includes('18_08_10'))
+const inp10 = w10.document.querySelector('input[type=file]')
+const buf10 = readFileSync(UP + '/' + barFile)
+Object.defineProperty(inp10, 'files', { value: [new w10.File([new Uint8Array(buf10)], barFile)] })
+inp10.dispatchEvent(new w10.Event('change', { bubbles: true }))
+await wait(1200)
+const t10 = text(w10)
+ok(/итог по категории больше суммы/.test(t10), 'журнал предупреждает о неполной выгрузке')
+ok(/КОКТЕЙЛИ/.test(t10) && /52/.test(t10), 'названа категория и размер расхождения', (/КОКТЕЙЛИ[^;]*/.exec(t10) || [''])[0])
+ok(/выгрузите эту неделю/i.test(t10), 'сказано, что делать')
+
 console.log(failed ? `\n${failed} проверок упало\n` : '\nвсе проверки прошли\n')
 process.exit(failed ? 1 : 0)
 

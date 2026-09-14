@@ -4,6 +4,7 @@ const REMAINDER_NAME = '(без детализации)';
 // часть позиций система не печатает. Разницу сохраняем отдельной позицией,
 // иначе недельные суммы занижаются (по коктейлям за 17.08 — на 52 шт и 27 тыс. ₽).
 function addCategoryRemainders(items, categoryTotals) {
+  const added = [];
   const listed = new Map();
   for (const it of items) {
     const agg = listed.get(it.category) || { qty: 0, revenue: 0, profit: 0 };
@@ -29,7 +30,9 @@ function addCategoryRemainders(items, categoryTotals) {
     };
     if (Math.abs(diff.qty) < 0.5 && Math.abs(diff.revenue) < 1 && Math.abs(diff.profit) < 1) continue;
     items.push({ category, name: REMAINDER_NAME, markup: null, cost: null, ...diff });
+    added.push({ category, ...diff });
   }
+  return added;
 }
 
 const MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
@@ -228,19 +231,19 @@ class Component extends DCLogic {
         qty, revenue, profit,
       });
     }
-    addCategoryRemainders(items, categoryTotals);
-    return { startIso, section, items };
+    const remainders = addCategoryRemainders(items, categoryTotals);
+    return { startIso, section, items, remainders };
   }
 
   handleWorkbook(wb, fileName, messages) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    const { startIso, section, items } = this.parseSheetRows(rows);
+    const { startIso, section, items, remainders } = this.parseSheetRows(rows);
     if (!startIso || !section) {
       messages.push(`Не удалось распознать файл «${fileName}» — проверьте формат выгрузки.`);
       return null;
     }
-    return { startIso, section, items };
+    return { startIso, section, items, remainders };
   }
 
   onFilesSelected = (e) => {
@@ -277,6 +280,12 @@ class Component extends DCLogic {
           if (parsed) {
             this.mergeUpload(db, parsed.startIso, parsed.section, parsed.items, messages);
             messages.push(`${file.name}: ${SECTION_LABEL[parsed.section]}, неделя ${weekLabel(parsed.startIso)} — ${parsed.items.length} позиций.`);
+            if (parsed.remainders && parsed.remainders.length) {
+              const list = parsed.remainders
+                .map(r => `${r.category} (не хватает ${fmtNum(r.qty)} шт, ${fmtRub(r.revenue)})`)
+                .join('; ');
+              messages.push(`⚠ В этом файле итог по категории больше суммы напечатанных строк: ${list}. Разница записана строкой «${REMAINDER_NAME}». Если нужны сами позиции — выгрузите эту неделю из учётной системы заново.`);
+            }
           }
         } catch (err) {
           messages.push(`Ошибка при чтении «${file.name}»: ${err.message}`);
