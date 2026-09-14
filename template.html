@@ -95,9 +95,21 @@
     <sc-if value="{{ tabIsTable }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px">
         <input type="text" value="{{ search }}" onChange="{{ onSearchChange }}" placeholder="Поиск позиции…" style="font:inherit;font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid rgba(32,32,29,0.14);background:#ffffff;color:#20201d;min-width:220px;flex:1;max-width:340px">
-        <div style="display:flex;gap:4px;background:#eeeae1;border-radius:8px;padding:3px">
-          <button onClick="{{ sortByNameClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;background:{{ sortByNameBg }};color:{{ sortByNameColor }}">По алфавиту {{ sortByNameArrow }}</button>
-          <button onClick="{{ sortByValueClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;background:{{ sortByValueBg }};color:{{ sortByValueColor }}">По значению {{ sortByValueArrow }}</button>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11.5px;font-weight:700;color:#8a8579;text-transform:uppercase;letter-spacing:0.04em">Категории</span>
+            <div style="display:flex;gap:4px;background:#eeeae1;border-radius:8px;padding:3px">
+              <button onClick="{{ sortByNameClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;background:{{ sortByNameBg }};color:{{ sortByNameColor }}">По алфавиту {{ sortByNameArrow }}</button>
+              <button onClick="{{ sortByValueClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;background:{{ sortByValueBg }};color:{{ sortByValueColor }}">По значению {{ sortByValueArrow }}</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11.5px;font-weight:700;color:#8a8579;text-transform:uppercase;letter-spacing:0.04em">Позиции</span>
+            <div style="display:flex;gap:4px;background:#eeeae1;border-radius:8px;padding:3px">
+              <button onClick="{{ itemSortByNameClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;background:{{ itemSortByNameBg }};color:{{ itemSortByNameColor }}">По алфавиту {{ itemSortByNameArrow }}</button>
+              <button onClick="{{ itemSortByValueClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;background:{{ itemSortByValueBg }};color:{{ itemSortByValueColor }}">По значению {{ itemSortByValueArrow }}</button>
+            </div>
+          </div>
         </div>
       </div>
     </sc-if>
@@ -321,6 +333,11 @@
             <div style="text-align:right">{{ grandTotalCell }}</div>
           </div>
         </div>
+        <sc-if value="{{ hasNoDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12.5px;color:#8a8579;line-height:1.5;margin-top:10px">
+            «Без детализации» — разница между итогом категории и суммой её строк: часть позиций выгрузка не печатает. В неделях, перенесённых из старого отчёта, бар вёлся только по категориям. Прочерк означает, что данных за неделю нет, а не ноль продаж.
+          </div>
+        </sc-if>
       </div>
     </sc-if>
 

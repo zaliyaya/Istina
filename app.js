@@ -36,7 +36,14 @@ const MONTHS = ['янв','фев','мар','апр','май','июн','июл','
 const SECTION_LABEL = { kitchen: 'Кухня', bar: 'Бар' };
 
 function normName(s) {
-  return String(s || '').toLowerCase().trim().replace(/[«»"'.]/g, '').replace(/\s+/g, ' ');
+  return String(s || '').toLowerCase().trim()
+    .replace(/[«»"'.]/g, '')
+    // «+ 1 Безлимитный…» в выгрузке и «Плюс 1 Безлимитный…» в старом отчёте —
+    // одна и та же позиция, но по буквам они расходятся слишком сильно,
+    // чтобы совпасть по схожести
+    .replace(/^\+\s*/, 'плюс ')
+    .replace(/ё/g, 'е')
+    .replace(/\s+/g, ' ');
 }
 function bigrams(s) { const a = []; for (let i = 0; i < s.length - 1; i++) a.push(s.substr(i, 2)); return a; }
 function diceCoeff(a, b) {
@@ -97,6 +104,8 @@ class Component extends DCLogic {
       search: '',
       sortBy: 'value',
       sortDir: 'desc',
+      itemSortBy: 'value',
+      itemSortDir: 'desc',
       customFrom: '',
       customTo: '',
       trendScope: 'total',
@@ -405,6 +414,11 @@ class Component extends DCLogic {
     if (this.state.sortBy === key) this.setState({ sortDir: this.state.sortDir === 'desc' ? 'asc' : 'desc' });
     else this.setState({ sortBy: key, sortDir: key === 'name' ? 'asc' : 'desc' });
   };
+  // Позиции внутри категории сортируются отдельно от самих категорий
+  setItemSort = (key) => {
+    if (this.state.itemSortBy === key) this.setState({ itemSortDir: this.state.itemSortDir === 'desc' ? 'asc' : 'desc' });
+    else this.setState({ itemSortBy: key, itemSortDir: key === 'name' ? 'asc' : 'desc' });
+  };
 
   selectedWeeks(db) {
     const all = Object.keys(db.weeks).sort();
@@ -678,10 +692,16 @@ class Component extends DCLogic {
     };
     catEntries.sort(compareEntries);
 
+    const itemSortDir = this.state.itemSortDir === 'asc' ? 1 : -1;
+    const compareItems = (a, b) => {
+      if (this.state.itemSortBy === 'name') return itemSortDir * a.name.localeCompare(b.name, 'ru');
+      return itemSortDir * (sortMetricVal(a.total, tableMetric) - sortMetricVal(b.total, tableMetric));
+    };
+
     const weekColumns = weeksSel.map(wk => ({ label: weekLabel(wk) }));
     const categoryRows = catEntries.map(c => {
       const expanded = searchNorm ? true : !!this.state.expanded[c.key];
-      const items = c.items.slice().sort(compareEntries);
+      const items = c.items.slice().sort(compareItems);
       return {
         key: c.key,
         name: c.name,
@@ -689,11 +709,12 @@ class Component extends DCLogic {
         expanded,
         arrow: expanded ? '▾' : '▸',
         onToggle: () => this.toggleCategory(c.key),
-        weekCells: weeksSel.map(wk => metricValue(c.byWeek.get(wk) || emptyAgg(), tableMetric)),
+        // Нет записи за неделю — значит данных нет, а не продано на ноль
+        weekCells: weeksSel.map(wk => (c.byWeek.has(wk) ? metricValue(c.byWeek.get(wk), tableMetric) : '—')),
         totalCell: metricValue(c.total, tableMetric),
         items: items.map(it => ({
           name: it.name,
-          weekCells: weeksSel.map(wk => metricValue(it.weekMap.get(wk) || emptyAgg(), tableMetric)),
+          weekCells: weeksSel.map(wk => (it.weekMap.has(wk) ? metricValue(it.weekMap.get(wk), tableMetric) : '—')),
           totalCell: metricValue(it.total, tableMetric),
         })),
       };
@@ -707,7 +728,7 @@ class Component extends DCLogic {
         addAgg(grandByWeek.get(wk), agg);
       }
     }
-    const grandTotalCells = weeksSel.map(wk => metricValue(grandByWeek.get(wk) || emptyAgg(), tableMetric));
+    const grandTotalCells = weeksSel.map(wk => (grandByWeek.has(wk) ? metricValue(grandByWeek.get(wk), tableMetric) : '—'));
     const grandTotalCell = metricValue(grandTotalAgg, tableMetric);
     const tableGridCols = `minmax(220px,260px) repeat(${weeksSel.length}, 100px) 110px`;
 
@@ -827,6 +848,14 @@ class Component extends DCLogic {
       categoryDropdownOpen: this.state.categoryDropdownOpen,
       onToggleCategoryDropdown: this.toggleCategoryDropdown, onClearCategoryFilter: this.clearCategoryFilter,
       search, onSearchChange: this.onSearchChange,
+      itemSortByNameClick: () => this.setItemSort('name'), itemSortByValueClick: () => this.setItemSort('value'),
+      itemSortByNameBg: this.state.itemSortBy === 'name' ? '#20201d' : 'transparent',
+      itemSortByNameColor: this.state.itemSortBy === 'name' ? '#f7f5f0' : '#5b5850',
+      itemSortByValueBg: this.state.itemSortBy === 'value' ? '#20201d' : 'transparent',
+      itemSortByValueColor: this.state.itemSortBy === 'value' ? '#f7f5f0' : '#5b5850',
+      itemSortByNameArrow: this.state.itemSortBy === 'name' ? (this.state.itemSortDir === 'asc' ? '↑' : '↓') : '',
+      itemSortByValueArrow: this.state.itemSortBy === 'value' ? (this.state.itemSortDir === 'asc' ? '↑' : '↓') : '',
+      hasNoDetail: catEntries.some(c => c.items.some(it => it.name === REMAINDER_NAME)),
       sortByNameClick: () => this.setSort('name'), sortByValueClick: () => this.setSort('value'),
       sortByNameBg: this.state.sortBy === 'name' ? '#20201d' : 'transparent', sortByNameColor: this.state.sortBy === 'name' ? '#f7f5f0' : '#5b5850',
       sortByNameArrow: this.state.sortBy === 'name' ? (this.state.sortDir === 'asc' ? '↑' : '↓') : '',
