@@ -361,13 +361,14 @@
           </sc-if>
 
           <div style="margin-top:14px">
-            <div style="font-size:13px;font-weight:600;color:#5b5850;margin-bottom:8px">Загруженные недели</div>
+            <div style="font-size:13px;font-weight:600;color:#5b5850;margin-bottom:2px">Загруженные недели</div>
+            <div style="font-size:12px;color:#8a8579;margin-bottom:8px">Нажмите «Кухня» или «Бар», чтобы удалить только этот раздел за неделю.</div>
             <sc-for list="{{ weeksList }}" as="w" hint-placeholder-count="3">
               <div style="display:flex;align-items:center;gap:10px;background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:10px;padding:10px 14px;margin-bottom:6px;font-size:13.5px">
                 <div style="flex:1;font-weight:600">{{ w.label }}</div>
-                <div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 9px;border-radius:6px;background:{{ w.kitchenBg }};color:{{ w.kitchenColor }}">Кухня{{ w.kitchenMark }}</div>
-                <div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 9px;border-radius:6px;background:{{ w.barBg }};color:{{ w.barColor }}">Бар{{ w.barMark }}</div>
-                <button onClick="{{ w.onDelete }}" style="border:none;background:transparent;color:#b23b3b;font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px">Удалить</button>
+                <button onClick="{{ w.onDeleteKitchen }}" title="{{ w.kitchenTitle }}" style="border:none;font:inherit;font-size:12px;padding:4px 9px;border-radius:6px;background:{{ w.kitchenBg }};color:{{ w.kitchenColor }};cursor:{{ w.kitchenCursor }}">Кухня{{ w.kitchenMark }}</button>
+                <button onClick="{{ w.onDeleteBar }}" title="{{ w.barTitle }}" style="border:none;font:inherit;font-size:12px;padding:4px 9px;border-radius:6px;background:{{ w.barBg }};color:{{ w.barColor }};cursor:{{ w.barCursor }}">Бар{{ w.barMark }}</button>
+                <button onClick="{{ w.onDelete }}" title="Удалить неделю целиком" style="border:none;background:transparent;color:#b23b3b;font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px">Удалить всё</button>
               </div>
             </sc-for>
             <sc-if value="{{ noWeeks }}" hint-placeholder-val="{{ false }}">

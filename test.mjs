@@ -297,6 +297,51 @@ ok(/итог по категории больше суммы/.test(t10), 'жур
 ok(/КОКТЕЙЛИ/.test(t10) && /52/.test(t10), 'названа категория и размер расхождения', (/КОКТЕЙЛИ[^;]*/.exec(t10) || [''])[0])
 ok(/выгрузите эту неделю/i.test(t10), 'сказано, что делать')
 
+// ---------- 11. раздельное удаление разделов ----------
+console.log('\n[11] удаление кухни и бара по отдельности')
+const w11 = open(saved)
+await wait(900)
+btn(w11, 'Данные').dispatchEvent(new w11.Event('click', { bubbles: true }))
+await wait(300)
+
+let confirmText = ''
+w11.confirm = (msg) => {
+  confirmText = msg
+  return true
+}
+
+const weekRow = [...w11.document.querySelectorAll('div')].find(
+  (d) =>
+    d.children.length === 4 &&
+    /Кухня/.test(d.children[1].textContent) &&
+    /Бар/.test(d.children[2].textContent),
+)
+ok(!!weekRow, 'строка недели найдена')
+const label = weekRow.children[0].textContent.trim()
+ok(/Удалить всё/.test(weekRow.children[3].textContent), 'кнопка удаления всей недели подписана явно')
+
+// удаляем только бар
+weekRow.children[2].dispatchEvent(new w11.Event('click', { bubbles: true }))
+await wait(400)
+ok(/Удалить данные бара/.test(confirmText), 'спрошено про бар', confirmText)
+
+const dbAfter = JSON.parse(w11.localStorage.getItem('istina-sales-db-v2'))
+const iso = Object.keys(dbAfter.weeks).sort().reverse()[0]
+ok(!dbAfter.weeks[iso].bar, 'бар за неделю удалён: ' + label)
+ok(!!dbAfter.weeks[iso].kitchen, 'кухня за ту же неделю осталась')
+
+// отметка ✓ у бара пропала, у кухни осталась
+const rowAfter = [...w11.document.querySelectorAll('div')].find(
+  (d) => d.children.length === 4 && d.children[0].textContent.trim() === label,
+)
+ok(rowAfter && /Кухня ✓/.test(rowAfter.children[1].textContent), 'у кухни осталась отметка')
+ok(rowAfter && !/Бар ✓/.test(rowAfter.children[2].textContent), 'у бара отметки больше нет')
+
+// дашборд пересчитался: неделя стала неполной
+btn(w11, 'Дашборд').dispatchEvent(new w11.Event('click', { bubbles: true }))
+await wait(400)
+ok(/Неполные недели/.test(text(w11)), 'дашборд предупреждает о неполной неделе')
+
 console.log(failed ? `\n${failed} проверок упало\n` : '\nвсе проверки прошли\n')
 process.exit(failed ? 1 : 0)
 

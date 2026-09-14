@@ -764,7 +764,20 @@ class Component extends DCLogic {
         barBg: has('bar') ? 'rgba(61,90,128,0.14)' : '#f2efe8',
         barColor: has('bar') ? '#3d5a80' : '#b3ada0',
         barMark: has('bar') ? ' ✓' : '',
-        onDelete: () => { if (window.confirm(`Удалить данные недели ${weekLabel(wk)}?`)) { this.deleteWeekSection(wk, 'kitchen'); this.deleteWeekSection(wk, 'bar'); } },
+        // Разделы удаляются по отдельности: бар можно перезалить, не трогая кухню
+        kitchenCursor: has('kitchen') ? 'pointer' : 'default',
+        kitchenTitle: has('kitchen') ? 'Удалить данные кухни за эту неделю' : 'Данных по кухне нет',
+        onDeleteKitchen: () => {
+          if (!has('kitchen')) return;
+          if (window.confirm(`Удалить данные кухни за ${weekLabel(wk)}?`)) this.deleteWeekSection(wk, 'kitchen');
+        },
+        barCursor: has('bar') ? 'pointer' : 'default',
+        barTitle: has('bar') ? 'Удалить данные бара за эту неделю' : 'Данных по бару нет',
+        onDeleteBar: () => {
+          if (!has('bar')) return;
+          if (window.confirm(`Удалить данные бара за ${weekLabel(wk)}?`)) this.deleteWeekSection(wk, 'bar');
+        },
+        onDelete: () => { if (window.confirm(`Удалить неделю ${weekLabel(wk)} целиком — и кухню, и бар?`)) { this.deleteWeekSection(wk, 'kitchen'); this.deleteWeekSection(wk, 'bar'); } },
       };
     });
 
