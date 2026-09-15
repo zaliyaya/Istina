@@ -178,6 +178,35 @@ class Component extends DCLogic {
     return db;
   }
 
+  /**
+   * Подмешивает данные, вшитые в файл отчёта, в уже накопленную базу.
+   * Правило простое: то, что пришло из прошлой версии файла (отметка 0),
+   * заменяется свежим; то, что человек загрузил сам (отметка со временем),
+   * остаётся нетронутым.
+   */
+  applySeed(stored, seed) {
+    let replaced = 0;
+    for (const wk of Object.keys(seed.weeks)) {
+      for (const section of ['kitchen', 'bar']) {
+        const incoming = seed.weeks[wk] && seed.weeks[wk][section];
+        if (!incoming) continue;
+        const key = wk + '|' + section;
+        if ((stored.stamps || {})[key] > 0) continue; // это загрузил пользователь
+        if (!stored.weeks[wk]) stored.weeks[wk] = {};
+        stored.weeks[wk][section] = incoming;
+        stored.stamps[key] = 0;
+        replaced++;
+      }
+    }
+    // справочники из файла не должны затирать ручные правки
+    for (const sec of ['kitchen', 'bar']) {
+      stored.registry[sec] = { ...seed.registry[sec], ...stored.registry[sec] };
+      stored.itemCategory[sec] = { ...seed.itemCategory[sec], ...stored.itemCategory[sec] };
+    }
+    stored.groups = { ...(seed.groups || {}), ...(stored.groups || {}) };
+    return replaced;
+  }
+
   initialDb() {
     const stored = this.loadPersisted();
     if (!stored || !Object.keys(stored.weeks).length) {
@@ -188,13 +217,14 @@ class Component extends DCLogic {
     // Файл отчёта обновили — подмешиваем новые недели к тому, что уже есть.
     // Ваши загрузки при этом не трогаются: у них отметка свежее.
     if (stored.seedVersion !== this.seedVersion()) {
-      const merged = this.mergeDbs(stored, this.seedDb()).db;
+      if (!stored.stamps) stored.stamps = {};
+      this.applySeed(stored, this.seedDb());
       // старые недели, которые больше не ведутся, убираем и у тех,
       // кто открывал прошлые версии файла
-      this.dropWeeksBefore(merged, this.seedCutoff());
-      merged.seedVersion = this.seedVersion();
-      this.persist(merged);
-      return merged;
+      this.dropWeeksBefore(stored, this.seedCutoff());
+      stored.seedVersion = this.seedVersion();
+      this.persist(stored);
+      return stored;
     }
     // отсечку применяем при каждом открытии: старые недели могут вернуться
     // из чужой базы или остаться с прошлых версий файла

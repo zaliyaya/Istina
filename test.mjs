@@ -546,6 +546,30 @@ await wait(400)
 const kept = [...w16b.document.querySelectorAll('input[inputmode=decimal]')].map((i) => i.value).filter(Boolean)
 ok(kept.includes('305.5') || kept.includes('305,5'), 'после перезапуска значение на месте', kept.join())
 
+// ---------- 17. новый файл обновляет данные прошлых версий ----------
+console.log('\n[17] цифры из старой версии файла заменяются свежими')
+const mk = (items) => {
+  const r = items.reduce((s, x) => s + (x.revenue || 0), 0)
+  const p = items.reduce((s, x) => s + (x.profit || 0), 0)
+  return (p / (r - p)) * 100
+}
+const stale = JSON.parse(saved)
+// так выглядела база, собранная прошлой версией отчёта
+stale.weeks['2026-08-24'].kitchen = [{ category: 'СТАРОЕ', name: 'Из ручного отчёта', qty: 10, revenue: 251687, profit: 192929 }]
+stale.stamps['2026-08-24|kitchen'] = 0
+// а эту неделю пользователь загрузил сам — её трогать нельзя
+stale.weeks['2026-08-10'].kitchen = [{ category: 'МОЁ', name: 'Своя загрузка', qty: 1, revenue: 1000, profit: 500 }]
+stale.stamps['2026-08-10|kitchen'] = Date.now()
+stale.seedVersion = 'прошлая-версия'
+
+const w17 = open(JSON.stringify(stale))
+await wait(1000)
+const db17 = JSON.parse(w17.localStorage.getItem('istina-sales-db-v2'))
+ok(Math.abs(mk(db17.weeks['2026-08-24'].kitchen) - 283.75) < 0.02, 'неделя из старой сборки пересчитана: ' + mk(db17.weeks['2026-08-24'].kitchen).toFixed(2) + '%')
+ok(!db17.weeks['2026-08-24'].kitchen.some((x) => x.category === 'СТАРОЕ'), 'старые строки убраны')
+ok(db17.weeks['2026-08-10'].kitchen.some((x) => x.name === 'Своя загрузка'), 'своя загрузка не затёрта')
+ok(db17.seedVersion === '19-2026-09-07', 'версия данных обновилась', String(db17.seedVersion))
+
 console.log(failed ? `\n${failed} проверок упало\n` : '\nвсе проверки прошли\n')
 process.exit(failed ? 1 : 0)
 
