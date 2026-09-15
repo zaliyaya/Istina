@@ -50,7 +50,7 @@ const w = open(null)
 await wait(800)
 const t0 = text(w)
 ok(/Истина · Анализ продаж/.test(t0), 'заголовок на месте')
-ok(/36 недель в базе/.test(t0), 'в базе 36 недель', (/(\d+) недел\S* в базе/.exec(t0) || [])[0])
+ok(/37 недель в базе/.test(t0), 'в базе 37 недель', (/(\d+) недел\S* в базе/.exec(t0) || [])[0])
 ok(/Выручка/.test(t0) && /Прибыль/.test(t0) && /Средняя наценка/.test(t0), 'показатели выведены')
 ok(/Кухня/.test(t0) && /Бар/.test(t0), 'разделы кухня и бар')
 ok(/Доля в продажах/.test(t0), 'блок долей')
@@ -60,7 +60,7 @@ ok(!/\{"20\d\d-/.test(t0), 'исходные данные не вывалили�
 const saved = w.localStorage.getItem('istina-sales-db-v2')
 ok(!!saved && saved.length > 100000, 'база сохранена в браузере: ' + (saved ? (saved.length / 1024).toFixed(0) + ' КБ' : 'нет'))
 const db0 = JSON.parse(saved)
-ok(Object.keys(db0.weeks).length === 36, 'в сохранённой базе 36 недель', String(Object.keys(db0.weeks).length))
+ok(Object.keys(db0.weeks).length === 37, 'в сохранённой базе 37 недель', String(Object.keys(db0.weeks).length))
 
 // суммы за неделю 31.08 должны совпасть с выгрузками: 168 676 + 165 284
 const wk = db0.weeks['2026-08-31']
@@ -74,9 +74,16 @@ ok(Math.abs(sum(wk.bar, 'qty') - 410) < 0.5, 'количество бара за
 const wk17 = db0.weeks['2026-08-17']
 ok(Math.abs(sum(wk17.bar, 'qty') - 667) < 0.5, 'бар за 17.08: сумма равна итогу файла (667)', String(sum(wk17.bar, 'qty')))
 ok(
-  wk17.bar.some((x) => x.name === '(без детализации)'),
-  'непропечатанные строки сохранены отдельной позицией',
+  !wk17.bar.some((x) => x.name === '(без детализации)'),
+  'после перезаливки бара строки «без детализации» не осталось',
 )
+ok(wk17.bar.filter((x) => x.category === 'КОКТЕЙЛИ').length > 10, 'коктейли расписаны по позициям', String(wk17.bar.filter((x) => x.category === 'КОКТЕЙЛИ').length))
+
+// новая неделя 07.09
+const wk0907 = db0.weeks['2026-09-07']
+ok(!!wk0907 && !!wk0907.kitchen && !!wk0907.bar, 'неделя 7–13 сентября загружена по обоим разделам')
+ok(Math.abs(sum(wk0907.kitchen, 'qty') - 361) < 0.5, 'кухня за 07.09 — 361 шт', String(sum(wk0907.kitchen, 'qty')))
+ok(Math.abs(sum(wk0907.bar, 'qty') - 407) < 0.5, 'бар за 07.09 — 407 шт', String(sum(wk0907.bar, 'qty')))
 
 // ---------- 2. вкладки ----------
 console.log('\n[2] переходы по вкладкам')
@@ -130,7 +137,7 @@ ok(
 console.log('\n[4] данные переживают перезапуск')
 const w3 = open(saved)
 await wait(800)
-ok(/36 недель в базе/.test(text(w3)), 'после перезапуска недели на месте')
+ok(/37 недель в базе/.test(text(w3)), 'после перезапуска недели на месте')
 
 
 
@@ -254,10 +261,8 @@ await wait(400)
 
 const t9 = text(w9)
 ok(/Aperol Spritz/.test(t9), 'позиции коктейлей показаны')
-ok(/без детализации/.test(t9), 'строка «без детализации» на месте')
+ok(!/без детализации/.test(t9), 'строки «без детализации» в коктейлях больше нет')
 ok(/—/.test(t9), 'в неделях без данных стоит прочерк')
-ok(/Прочерк означает/.test(t9), 'под таблицей есть пояснение')
-
 // «+ 1 Безлимитный…» из выгрузки и «Плюс 1 Безлимитный…» из старого отчёта —
 // одна позиция; раньше они висели двумя строками с нулями и прочерками
 const gridRows = [...w9.document.querySelectorAll('div')].filter(
@@ -341,6 +346,133 @@ ok(rowAfter && !/Бар ✓/.test(rowAfter.children[2].textContent), 'у бар�
 btn(w11, 'Дашборд').dispatchEvent(new w11.Event('click', { bubbles: true }))
 await wait(400)
 ok(/Неполные недели/.test(text(w11)), 'дашборд предупреждает о неполной неделе')
+
+// ---------- 12. объединение баз между коллегами ----------
+console.log('\n[12] слияние базы из общей папки')
+
+// «Коллега»: чистый отчёт, загружает бар за 24.08
+const colleague = open(null)
+await wait(900)
+btn(colleague, 'Данные').dispatchEvent(new colleague.Event('click', { bubbles: true }))
+await wait(200)
+const barFile24 = readdirSync(UP).find((f) => f.includes('24_08_2026_по_30_08_2026'))
+const ci = colleague.document.querySelector('input[type=file]')
+const cb = readFileSync(UP + '/' + barFile24)
+Object.defineProperty(ci, 'files', { value: [new colleague.File([new Uint8Array(cb)], barFile24)] })
+ci.dispatchEvent(new colleague.Event('change', { bubbles: true }))
+await wait(1200)
+const colleagueBase = colleague.localStorage.getItem('istina-sales-db-v2')
+const cdb = JSON.parse(colleagueBase)
+ok(!!cdb.stamps && Object.keys(cdb.stamps).length > 0, 'записи помечены временем')
+ok(cdb.stamps['2026-08-24|bar'] > 0, 'у загруженного раздела свежая отметка')
+
+// «Я»: своя база, куда прилетает файл коллеги
+const mineBefore = JSON.parse(saved)
+const mineWeeks = Object.keys(mineBefore.weeks).length
+delete mineBefore.weeks['2026-08-24'].bar
+
+
+const me2 = open(JSON.stringify(mineBefore))
+await wait(900)
+let asked = ''
+me2.confirm = (m) => {
+  asked = m
+  return true
+}
+btn(me2, 'Данные').dispatchEvent(new me2.Event('click', { bubbles: true }))
+await wait(200)
+const importInput = [...me2.document.querySelectorAll('input[type=file]')].find((i) =>
+  (i.getAttribute('accept') || '').includes('json'),
+)
+ok(!!importInput, 'есть поле для файла базы')
+Object.defineProperty(importInput, 'files', {
+  value: [new me2.File([colleagueBase], 'истина-база.json')],
+})
+importInput.dispatchEvent(new me2.Event('change', { bubbles: true }))
+await wait(800)
+
+ok(/Объединить базы/.test(asked), 'спрашивает про объединение, а не про замену', asked.slice(0, 60))
+ok(/добавлено разделов недель/.test(asked), 'в вопросе есть сводка изменений', asked.replace(/\n+/g, ' ').slice(0, 140))
+
+const merged = JSON.parse(me2.localStorage.getItem('istina-sales-db-v2'))
+ok(!!merged.weeks['2026-08-24'].bar, 'раздел от коллеги подтянулся')
+ok(Object.keys(merged.weeks).length === mineWeeks, 'свои недели на месте: ' + Object.keys(merged.weeks).length)
+ok(!!merged.weeks['2026-08-31'] && !!merged.weeks['2026-08-31'].kitchen, 'своя кухня не затёрта')
+ok(Object.keys(merged.groups || {}).length === 16, 'справочник групп сохранился')
+
+// ---------- 13. обновлённый файл отчёта подмешивает новые недели ----------
+console.log('\n[13] новая сборка отчёта не теряет накопленное')
+
+// у «пользователя» уже есть база и своя загруженная неделя
+const w13 = open(null)
+await wait(900)
+btn(w13, 'Данные').dispatchEvent(new w13.Event('click', { bubbles: true }))
+await wait(200)
+const own = readdirSync(UP).find((f) => f.includes('10_08_2026'))
+const in13 = w13.document.querySelector('input[type=file]')
+const buf13 = readFileSync(UP + '/' + own)
+Object.defineProperty(in13, 'files', { value: [new w13.File([new Uint8Array(buf13)], own)] })
+in13.dispatchEvent(new w13.Event('change', { bubbles: true }))
+await wait(1200)
+const stored13 = JSON.parse(w13.localStorage.getItem('istina-sales-db-v2'))
+ok(!!stored13.seedVersion, 'версия вшитых данных сохранена: ' + stored13.seedVersion)
+const ownStamp = stored13.stamps['2026-08-10|kitchen']
+ok(ownStamp > 0, 'своя загрузка помечена свежим временем')
+
+// приходит новый файл отчёта: версия данных другая, добавлена новая неделя
+const bumped = html
+  .replace(/id="seed-version">[^<]*</, 'id="seed-version">99-2026-09-07<')
+  .replace(/"2026-08-31":/, '"2026-09-07":{"kitchen":[{"category":"ТЕСТ","name":"Новое блюдо","markup":100,"cost":10,"qty":5,"revenue":200,"profit":100}]},"2026-08-31":')
+
+const dom13 = new JSDOM(bumped, {
+  url: 'http://localhost/otchet.html',
+  runScripts: 'dangerously',
+  pretendToBeVisual: true,
+  beforeParse(w) {
+    w.ResizeObserver = class { observe() {} disconnect() {} }
+    w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} })
+    w.localStorage.setItem('istina-sales-db-v2', JSON.stringify(stored13))
+  },
+})
+await wait(1000)
+const after13 = JSON.parse(dom13.window.localStorage.getItem('istina-sales-db-v2'))
+ok(!!after13.weeks['2026-09-07'], 'новая неделя из обновлённого файла появилась')
+ok(!!after13.weeks['2026-08-10'] && !!after13.weeks['2026-08-10'].kitchen, 'своя загрузка на месте')
+ok(after13.stamps['2026-08-10|kitchen'] === ownStamp, 'своя неделя не перезаписана вшитой')
+ok(after13.seedVersion === '99-2026-09-07', 'версия обновилась', String(after13.seedVersion))
+ok(/37 недель в базе/.test(text(dom13.window)), 'счётчик недель вырос', text(dom13.window).slice(0, 80))
+
+// ---------- 14. наценка совпадает с выгрузкой ----------
+console.log('\n[14] наценка считается как в выгрузке')
+const w14 = open(saved)
+await wait(900)
+const sel14 = [...w14.document.querySelectorAll('select')].find((s) =>
+  [...s.options].some((o) => o.textContent === 'Последняя неделя'),
+)
+sel14.value = 'w1'
+sel14.dispatchEvent(new w14.Event('change', { bubbles: true }))
+await wait(400)
+const t14 = text(w14)
+const shown = [...t14.matchAll(/Средняя наценка ([\d,]+)%/g)].map((m) => Number(m[1].replace(',', '.')))
+ok(shown.length === 3, 'наценка показана по предприятию, кухне и бару', String(shown.length))
+
+// то же считаем прямо из базы: прибыль ÷ (выручка − прибыль)
+const db14 = JSON.parse(w14.localStorage.getItem('istina-sales-db-v2'))
+const lastWeek = Object.keys(db14.weeks).sort().pop()
+const calc = (items) => {
+  const rev = items.reduce((a, x) => a + (x.revenue || 0), 0)
+  const pro = items.reduce((a, x) => a + (x.profit || 0), 0)
+  return (pro / (rev - pro)) * 100
+}
+const kitchenMarkup = calc(db14.weeks[lastWeek].kitchen)
+const barMarkup = calc(db14.weeks[lastWeek].bar)
+ok(Math.abs(shown[1] - kitchenMarkup) < 0.06, `кухня: на экране ${shown[1]}%, расчёт ${kitchenMarkup.toFixed(2)}%`)
+ok(Math.abs(shown[2] - barMarkup) < 0.06, `бар: на экране ${shown[2]}%, расчёт ${barMarkup.toFixed(2)}%`)
+
+// эти же числа стоят в «Итого» самих выгрузок за 7–13 сентября
+ok(Math.abs(shown[1] - 303.55) < 0.06, 'кухня совпала с «Итого» выгрузки (303,55%)', String(shown[1]))
+ok(Math.abs(shown[2] - 272.2) < 0.06, 'бар совпал с «Итого» выгрузки (272,20%)', String(shown[2]))
+ok(/,\d%/.test(t14), 'наценка выводится с десятыми')
 
 console.log(failed ? `\n${failed} проверок упало\n` : '\nвсе проверки прошли\n')
 process.exit(failed ? 1 : 0)

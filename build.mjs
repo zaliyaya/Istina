@@ -27,23 +27,27 @@ for (const pos of history.positions) {
   }
 }
 
-// Недели, для которых есть настоящая выгрузка, перекрывают ручной отчёт.
+// Недели, для которых есть настоящая выгрузка, перекрывают ручной отчёт:
+// экспорт из учётной системы точнее, чем цифры, перенесённые руками.
 let overridden = 0
-const uploads = '/mnt/user-data/uploads'
-let uploadFiles = []
-try {
-  uploadFiles = readdirSync(uploads).filter((f) => f.startsWith('Отчет_о_продажах_с'))
-} catch {
-  /* выгрузок под рукой нет — собираем только на истории */
-}
-if (uploadFiles.length) {
-  const { readXlsx } = await import('../app/js/xlsxread.js')
-  const { parseWeeklySheet } = await import('../app/js/parse.js')
-  for (const file of uploadFiles) {
-    const buf = readFileSync(`${uploads}/${file}`)
+const exportsDir = 'data/exports'
+const exportFiles = readdirSync(exportsDir).filter((f) => f.endsWith('.xlsx')).sort()
+
+if (exportFiles.length) {
+  const { readXlsx } = await import('./src/xlsxread-node.mjs')
+  const { parseWeeklySheet } = await import('./src/parse-node.mjs')
+  for (const file of exportFiles) {
+    const buf = readFileSync(`${exportsDir}/${file}`)
     const sheets = await readXlsx(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
     const parsed = parseWeeklySheet(sheets[0].rows, file)
-    if (!parsed.section) continue
+    if (!parsed.section) {
+      console.warn(`  пропуск: не понял раздел в ${file}`)
+      continue
+    }
+    if (parsed.remainders.length) {
+      const list = parsed.remainders.map((r) => `${r.category} +${r.qty} шт`).join(', ')
+      console.warn(`  ${file}: итог больше суммы строк (${list})`)
+    }
     if (!seed[parsed.week]) seed[parsed.week] = {}
     if (seed[parsed.week][parsed.section]) overridden++
     seed[parsed.week][parsed.section] = parsed.rows.map((r) => ({
@@ -67,6 +71,11 @@ for (const [category, info] of Object.entries(history.barGroups || {})) {
 // Дубль шаблона текстом для рантайма: внутри <script> разметку никто не
 // разбирает, поэтому циклы внутри <select> доживают до сборки.
 const rawTemplate = read('src/template.html').split('</script>').join('<\\/script>')
+
+// Версия данных — по самой поздней неделе и их количеству: пересобрали с новой
+// выгрузкой — версия изменилась, и отчёт подмешает её у всех, кто откроет файл.
+const seedWeeks = Object.keys(seed).sort()
+const seedVersion = `${seedWeeks.length}-${seedWeeks[seedWeeks.length - 1] || 'пусто'}`
 
 // ---------- сборка страницы ----------
 
@@ -101,6 +110,10 @@ ${read('vendor/support.js')}
 </script>
 <script type="application/json" id="seed-data">${JSON.stringify(seed)}</script>
 <script type="application/json" id="group-seed">${JSON.stringify(groupSeed)}</script>
+<!-- Версия вшитых данных. Меняется при каждой пересборке: по ней отчёт
+     понимает, что файл обновили, и подмешивает новые недели к тому,
+     что уже накоплено в браузере. -->
+<script type="text/plain" id="seed-version">${seedVersion}</script>
 </head>
 <body>
 <x-dc>
@@ -121,5 +134,5 @@ writeFileSync('отчет.html', html)
 console.log(
   `отчет.html собран: ${(html.length / 1024 / 1024).toFixed(2)} МБ · ` +
     `недель ${Object.keys(seed).length} · заменено выгрузками ${overridden} · ` +
-    `категорий бара с группой ${Object.keys(groupSeed).length}`,
+    `категорий бара с группой ${Object.keys(groupSeed).length} · версия данных ${seedVersion}`,
 )

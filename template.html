@@ -347,7 +347,7 @@
         <div>
           <div onClick="{{ openFileDialog }}" onDragOver="{{ onDragOver }}" onDrop="{{ onDrop }}" style="background:#ffffff;border:2px dashed rgba(32,32,29,0.18);border-radius:14px;padding:36px 20px;text-align:center;cursor:pointer" style-hover="border-color:#a86b1f;background:#fdf9f2">
             <div style="font-size:15px;font-weight:600;margin-bottom:6px">Загрузите недельные выгрузки</div>
-            <div style="font-size:13px;color:#8a8579">Перетащите .xlsx файлы сюда или нажмите, чтобы выбрать (отдельно бар и кухня)</div>
+            <div style="font-size:13px;color:#8a8579">Перетащите .xlsx выгрузки или файл базы .json сюда или нажмите, чтобы выбрать (отдельно бар и кухня)</div>
             <input type="file" ref="{{ fileInputRef }}" multiple="{{ true }}" accept=".xlsx" onChange="{{ onFilesSelected }}" style="display:none">
           </div>
 
@@ -426,7 +426,7 @@
         <div>
           <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:18px 20px">
             <div style="font-size:13px;font-weight:600;margin-bottom:10px">Общая база (для коллег)</div>
-            <div style="font-size:13px;color:#5b5850;margin-bottom:14px;line-height:1.5">Экспортируйте файл базы и передайте коллегам, чтобы у всех были одинаковые данные. При импорте текущая база будет заменена.</div>
+            <div style="font-size:13px;color:#5b5850;margin-bottom:14px;line-height:1.5">Держите файл <b>истина-база.json</b> в общей папке облака (Яндекс.Диск, OneDrive, Google&nbsp;Диск). Порядок такой: загрузили свои выгрузки → «Выгрузить базу» → положили файл в папку поверх старого. Коллега открывает отчёт и нажимает «Загрузить базу» — данные объединятся.<br><br>Импорт не затирает ваши данные: недели складываются, а если один и тот же раздел недели есть у обоих, останется тот, что записан позже. Файл базы можно просто перетащить в поле загрузки выше.</div>
             <button onClick="{{ onExport }}" style="width:100%;font:inherit;font-size:13.5px;font-weight:600;padding:10px;border-radius:8px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;cursor:pointer;margin-bottom:8px">Экспортировать базу (.json)</button>
             <button onClick="{{ openImportDialog }}" style="width:100%;font:inherit;font-size:13.5px;font-weight:600;padding:10px;border-radius:8px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;cursor:pointer">Импортировать базу (.json)</button>
             <input type="file" ref="{{ importInputRef }}" accept=".json" onChange="{{ onImportFile }}" style="display:none">

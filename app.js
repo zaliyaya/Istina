@@ -59,7 +59,11 @@ function diceCoeff(a, b) {
 }
 function fmtRub(n) { return Math.round(n || 0).toLocaleString('ru-RU') + ' \u20BD'; }
 function fmtNum(n) { return Math.round(n || 0).toLocaleString('ru-RU'); }
-function fmtPct(n) { return (n == null || !isFinite(n) ? '—' : Math.round(n) + '%'); }
+function fmtPct(n) {
+  if (n == null || !isFinite(n)) return '—';
+  // с одним знаком: иначе 303,5% на сайте и в выгрузке выглядят как разные числа
+  return n.toFixed(1).replace('.', ',') + '%';
+}
 function addDays(iso, d) {
   const dt = new Date(iso + 'T00:00:00');
   dt.setDate(dt.getDate() + d);
@@ -123,17 +127,24 @@ class Component extends DCLogic {
     };
   }
 
-  initialDb() {
-    let db = this.loadPersisted();
-    if (db && Object.keys(db.weeks).length) return db;
-    db = this.emptyDb();
+  seedVersion() {
+    const el = document.getElementById('seed-version');
+    return el ? el.textContent.trim() : '';
+  }
+
+  // База, собранная из данных, вшитых в файл отчёта
+  seedDb() {
+    const db = this.emptyDb();
     const seedEl = document.getElementById('seed-data');
     if (seedEl) {
       try {
         const seed = JSON.parse(seedEl.textContent);
         for (const wk of Object.keys(seed).sort()) {
           for (const section of ['kitchen', 'bar']) {
-            if (seed[wk][section]) this.mergeUpload(db, wk, section, seed[wk][section], []);
+            if (!seed[wk][section]) continue;
+            this.mergeUpload(db, wk, section, seed[wk][section], []);
+            // отметка «0»: всё, что вы загрузили сами, считается свежее
+            db.stamps[wk + '|' + section] = 0;
           }
         }
       } catch (e) { /* без исходных данных просто откроется пустой отчёт */ }
@@ -142,11 +153,29 @@ class Component extends DCLogic {
     if (groupEl) {
       try { db.groups = JSON.parse(groupEl.textContent) || {}; } catch (e) { /* не критично */ }
     }
-    this.persist(db);
+    db.seedVersion = this.seedVersion();
     return db;
   }
 
-  emptyDb() { return { weeks: {}, registry: { kitchen: {}, bar: {} }, itemCategory: { kitchen: {}, bar: {} }, banquets: [], groups: {} }; }
+  initialDb() {
+    const stored = this.loadPersisted();
+    if (!stored || !Object.keys(stored.weeks).length) {
+      const db = this.seedDb();
+      this.persist(db);
+      return db;
+    }
+    // Файл отчёта обновили — подмешиваем новые недели к тому, что уже есть.
+    // Ваши загрузки при этом не трогаются: у них отметка свежее.
+    if (stored.seedVersion !== this.seedVersion()) {
+      const merged = this.mergeDbs(stored, this.seedDb()).db;
+      merged.seedVersion = this.seedVersion();
+      this.persist(merged);
+      return merged;
+    }
+    return stored;
+  }
+
+  emptyDb() { return { weeks: {}, registry: { kitchen: {}, bar: {} }, itemCategory: { kitchen: {}, bar: {} }, banquets: [], groups: {}, stamps: {} }; }
 
   loadPersisted() {
     try {
@@ -155,6 +184,7 @@ class Component extends DCLogic {
       const db = JSON.parse(raw);
       if (!db.banquets) db.banquets = [];
       if (!db.groups) db.groups = {};
+      if (!db.stamps) db.stamps = {};
       return db;
     } catch (e) { return null; }
   }
@@ -253,8 +283,12 @@ class Component extends DCLogic {
   };
   onDrop = (e) => {
     e.preventDefault();
-    const files = Array.from(e.dataTransfer.files || []).filter(f => /\.xlsx$/i.test(f.name));
-    this.processFiles(files);
+    const all = Array.from(e.dataTransfer.files || []);
+    const base = all.find(f => /\.json$/i.test(f.name));
+    // файл общей базы можно просто бросить сюда же — он сольётся с текущей
+    if (base) this.mergeFromFile(base);
+    const sheets = all.filter(f => /\.xlsx$/i.test(f.name));
+    if (sheets.length) this.processFiles(sheets);
   };
   onDragOver = (e) => { e.preventDefault(); };
   openFileDialog = () => { this.fileInputRef.current && this.fileInputRef.current.click(); };
@@ -279,6 +313,7 @@ class Component extends DCLogic {
           const parsed = this.handleWorkbook(wb, file.name, messages);
           if (parsed) {
             this.mergeUpload(db, parsed.startIso, parsed.section, parsed.items, messages);
+            this.stampSection(db, parsed.startIso, parsed.section);
             messages.push(`${file.name}: ${SECTION_LABEL[parsed.section]}, неделя ${weekLabel(parsed.startIso)} — ${parsed.items.length} позиций.`);
             if (parsed.remainders && parsed.remainders.length) {
               const list = parsed.remainders
@@ -297,6 +332,12 @@ class Component extends DCLogic {
     });
   }
 
+  // Когда какой раздел недели записан — по этим отметкам сливаются базы
+  stampSection(db, weekIso, section) {
+    if (!db.stamps) db.stamps = {};
+    db.stamps[weekIso + '|' + section] = Date.now();
+  }
+
   deleteWeekSection(weekIso, section) {
     const db = this.state.db;
     if (!db.weeks[weekIso]) return;
@@ -306,32 +347,95 @@ class Component extends DCLogic {
     this.setState({ db });
   }
 
+  /**
+   * Сливает чужую базу со своей. Недели независимы, поэтому конфликтов почти
+   * нет: если один и тот же раздел недели есть у обоих, побеждает тот, что
+   * записан позже. Всё остальное — справочники, банкеты — объединяется.
+   */
+  mergeDbs(mine, theirs) {
+    const out = JSON.parse(JSON.stringify(mine));
+    if (!out.stamps) out.stamps = {};
+    const theirStamps = theirs.stamps || {};
+    let added = 0, replaced = 0, kept = 0;
+
+    for (const wk of Object.keys(theirs.weeks || {})) {
+      for (const section of ['kitchen', 'bar']) {
+        const incoming = theirs.weeks[wk] && theirs.weeks[wk][section];
+        if (!incoming) continue;
+        const existing = out.weeks[wk] && out.weeks[wk][section];
+        if (!out.weeks[wk]) out.weeks[wk] = {};
+        if (!existing) {
+          out.weeks[wk][section] = incoming;
+          added++;
+        } else {
+          const key = wk + '|' + section;
+          // без отметки считаем данные старыми и своё не трогаем
+          if ((theirStamps[key] || 0) > (out.stamps[key] || 0)) {
+            out.weeks[wk][section] = incoming;
+            replaced++;
+          } else {
+            kept++;
+          }
+        }
+        const key = wk + '|' + section;
+        if ((theirStamps[key] || 0) > (out.stamps[key] || 0)) out.stamps[key] = theirStamps[key];
+      }
+    }
+
+    // справочники: своё в приоритете, чужое добавляется
+    for (const section of ['kitchen', 'bar']) {
+      out.registry[section] = { ...(theirs.registry && theirs.registry[section]), ...out.registry[section] };
+      out.itemCategory[section] = { ...(theirs.itemCategory && theirs.itemCategory[section]), ...out.itemCategory[section] };
+    }
+    out.groups = { ...(theirs.groups || {}), ...(out.groups || {}) };
+
+    const seen = new Set((out.banquets || []).map(b => b.id));
+    let banquets = 0;
+    for (const b of theirs.banquets || []) {
+      if (seen.has(b.id)) continue;
+      out.banquets.push(b);
+      seen.add(b.id);
+      banquets++;
+    }
+    return { db: out, added, replaced, kept, banquets };
+  };
+
   onExport = () => {
     const blob = new Blob([JSON.stringify(this.state.db)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `istina-sales-db-${new Date().toISOString().slice(0, 10)}.json`;
+    // имя постоянное: в общей папке файл должен заменять сам себя
+    a.href = url; a.download = 'истина-база.json';
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   };
   openImportDialog = () => { this.importInputRef.current && this.importInputRef.current.click(); };
   onImportFile = (e) => {
     const file = e.target.files && e.target.files[0];
-    if (!file) return;
+    e.target.value = '';
+    if (file) this.mergeFromFile(file);
+  };
+  mergeFromFile = (file) => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
         if (!parsed.weeks || !parsed.registry) throw new Error('неверный формат файла');
-        if (!window.confirm('Заменить текущую базу импортированным файлом?')) return;
-        this.persist(parsed);
-        this.setState({ db: parsed, importError: '' });
+        const res = this.mergeDbs(this.state.db, parsed);
+        const parts = [];
+        if (res.added) parts.push(`добавлено разделов недель: ${res.added}`);
+        if (res.replaced) parts.push(`обновлено более свежими: ${res.replaced}`);
+        if (res.kept) parts.push(`оставлено своих (они новее): ${res.kept}`);
+        if (res.banquets) parts.push(`банкетов: ${res.banquets}`);
+        const summary = parts.length ? parts.join(', ') : 'нового в файле не оказалось';
+        if (!window.confirm(`Объединить базы?\n\n${summary}.\n\nВаши данные не пропадут: недели, которых нет в файле, останутся на месте.`)) return;
+        this.persist(res.db);
+        this.setState({ db: res.db, importError: '', uploadLog: [`База объединена с файлом «${file.name}»: ${summary}.`] });
       } catch (err) {
-        this.setState({ importError: 'Не удалось импортировать файл: ' + err.message });
+        this.setState({ importError: 'Не удалось прочитать файл базы: ' + err.message });
       }
     };
     reader.readAsText(file);
-    e.target.value = '';
   };
   onClearAll = () => {
     if (!window.confirm('Удалить все загруженные данные без возможности восстановления?')) return;
@@ -384,6 +488,7 @@ class Component extends DCLogic {
       const a = this.weekAggregate(db, wk, section);
       total.qty += a.qty; total.revenue += a.revenue; total.profit += a.profit; total.costTotal += a.costTotal;
     }
+    total.costTotal = total.revenue - total.profit;
     total.markup = total.costTotal > 0 ? (total.profit / total.costTotal) * 100 : null;
     return total;
   }
@@ -470,11 +575,14 @@ class Component extends DCLogic {
   }
 
   aggregate(rows) {
-    let qty = 0, revenue = 0, profit = 0, costTotal = 0;
+    let qty = 0, revenue = 0, profit = 0;
     for (const r of rows) {
       qty += r.qty || 0; revenue += r.revenue || 0; profit += r.profit || 0;
-      costTotal += (r.cost || 0) * (r.qty || 0);
     }
+    // Себестоимость по определению = выручка − валовая прибыль. Именно так
+    // считает «Итого» в выгрузке. Сумма «цена за единицу × количество» даёт
+    // другую цифру: цена округлена до копеек, а у части строк её нет вовсе.
+    const costTotal = revenue - profit;
     const markup = costTotal > 0 ? (profit / costTotal) * 100 : null;
     return { qty, revenue, profit, costTotal, markup };
   }
