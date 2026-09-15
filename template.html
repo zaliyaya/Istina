@@ -292,6 +292,9 @@
         <div style="overflow-x:auto">
           <div style="display:grid;grid-template-columns:{{ tableGridCols }};width:max-content;min-width:100%;padding:12px 16px;background:#f2efe8;font-size:12px;font-weight:700;color:#5b5850;text-transform:uppercase;letter-spacing:0.02em">
             <div style="position:sticky;left:0;background:#f2efe8;padding-right:10px">Категория / позиция</div>
+            <sc-if value="{{ showBaseline }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:right;white-space:nowrap;color:#a86b1f">{{ baselineHeader }}</div>
+            </sc-if>
             <sc-for list="{{ weekColumns }}" as="wk" hint-placeholder-count="6">
               <div style="text-align:right;white-space:nowrap">{{ wk.label }}</div>
             </sc-for>
@@ -304,6 +307,11 @@
                   <span style="color:{{ cat.color }};font-size:11px">{{ cat.arrow }}</span>
                   <span>{{ cat.name }}</span>
                 </div>
+                <sc-if value="{{ showBaseline }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align:right" onClick="{{ cat.onBaselineClick }}">
+                    <input value="{{ cat.baseline }}" onChange="{{ cat.onBaselineChange }}" placeholder="—" inputmode="decimal" style="width:76px;font:inherit;font-size:12.5px;font-weight:600;text-align:right;padding:3px 6px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#ffffff;color:#a86b1f">
+                  </div>
+                </sc-if>
                 <sc-for list="{{ cat.weekCells }}" as="cell" hint-placeholder-count="6">
                   <div style="text-align:right;font-weight:600">{{ cell }}</div>
                 </sc-for>
@@ -313,6 +321,11 @@
                 <sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="4">
                   <div style="display:grid;grid-template-columns:{{ tableGridCols }};width:max-content;min-width:100%;padding:9px 16px;border-top:1px solid rgba(32,32,29,0.05);font-size:13.5px;background:#ffffff">
                     <div style="position:sticky;left:0;background:#ffffff;padding-left:22px;padding-right:10px">{{ it.name }}</div>
+                    <sc-if value="{{ showBaseline }}" hint-placeholder-val="{{ false }}">
+                      <div style="text-align:right">
+                        <input value="{{ it.baseline }}" onChange="{{ it.onBaselineChange }}" placeholder="—" inputmode="decimal" style="width:76px;font:inherit;font-size:12.5px;text-align:right;padding:3px 6px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#a86b1f">
+                      </div>
+                    </sc-if>
                     <sc-for list="{{ it.weekCells }}" as="cell" hint-placeholder-count="6">
                       <div style="text-align:right;color:#5b5850">{{ cell }}</div>
                     </sc-for>
@@ -327,6 +340,9 @@
           </sc-if>
           <div style="display:grid;grid-template-columns:{{ tableGridCols }};width:max-content;min-width:100%;padding:13px 16px;border-top:2px solid rgba(32,32,29,0.14);font-weight:700;background:#f2efe8">
             <div style="position:sticky;left:0;background:#f2efe8;padding-right:10px">Итого</div>
+            <sc-if value="{{ showBaseline }}" hint-placeholder-val="{{ false }}">
+              <div></div>
+            </sc-if>
             <sc-for list="{{ grandTotalCells }}" as="cell" hint-placeholder-count="6">
               <div style="text-align:right">{{ cell }}</div>
             </sc-for>
@@ -335,6 +351,7 @@
         </div>
         <sc-if value="{{ hasNoDetail }}" hint-placeholder-val="{{ false }}">
           <div style="font-size:12.5px;color:#8a8579;line-height:1.5;margin-top:10px">
+            «База» — ориентир, который вы вписываете сами: с ним удобно сравнивать, выросла наценка или себестоимость. На расчёты это поле не влияет, чтобы стереть — очистите его.<br>
             «Без детализации» — разница между итогом категории и суммой её строк: часть позиций выгрузка не печатает. В неделях, перенесённых из старого отчёта, бар вёлся только по категориям. Прочерк означает, что данных за неделю нет, а не ноль продаж.
           </div>
         </sc-if>

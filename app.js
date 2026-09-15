@@ -132,6 +132,26 @@ class Component extends DCLogic {
     return el ? el.textContent.trim() : '';
   }
 
+  // Недели раньше этой даты в отчёте не ведутся
+  seedCutoff() {
+    const el = document.getElementById('seed-cutoff');
+    return el ? el.textContent.trim() : '';
+  }
+
+  dropWeeksBefore(db, cutoff) {
+    if (!cutoff) return 0;
+    let n = 0;
+    for (const wk of Object.keys(db.weeks)) {
+      if (wk >= cutoff) continue;
+      delete db.weeks[wk];
+      delete db.stamps[wk + '|kitchen'];
+      delete db.stamps[wk + '|bar'];
+      n++;
+    }
+    db.banquets = (db.banquets || []).filter(b => b.weekIso >= cutoff);
+    return n;
+  }
+
   // База, собранная из данных, вшитых в файл отчёта
   seedDb() {
     const db = this.emptyDb();
@@ -153,6 +173,7 @@ class Component extends DCLogic {
     if (groupEl) {
       try { db.groups = JSON.parse(groupEl.textContent) || {}; } catch (e) { /* не критично */ }
     }
+    this.dropWeeksBefore(db, this.seedCutoff());
     db.seedVersion = this.seedVersion();
     return db;
   }
@@ -168,14 +189,20 @@ class Component extends DCLogic {
     // Ваши загрузки при этом не трогаются: у них отметка свежее.
     if (stored.seedVersion !== this.seedVersion()) {
       const merged = this.mergeDbs(stored, this.seedDb()).db;
+      // старые недели, которые больше не ведутся, убираем и у тех,
+      // кто открывал прошлые версии файла
+      this.dropWeeksBefore(merged, this.seedCutoff());
       merged.seedVersion = this.seedVersion();
       this.persist(merged);
       return merged;
     }
+    // отсечку применяем при каждом открытии: старые недели могут вернуться
+    // из чужой базы или остаться с прошлых версий файла
+    if (this.dropWeeksBefore(stored, this.seedCutoff())) this.persist(stored);
     return stored;
   }
 
-  emptyDb() { return { weeks: {}, registry: { kitchen: {}, bar: {} }, itemCategory: { kitchen: {}, bar: {} }, banquets: [], groups: {}, stamps: {} }; }
+  emptyDb() { return { weeks: {}, registry: { kitchen: {}, bar: {} }, itemCategory: { kitchen: {}, bar: {} }, banquets: [], groups: {}, stamps: {}, baseline: {} }; }
 
   loadPersisted() {
     try {
@@ -185,6 +212,7 @@ class Component extends DCLogic {
       if (!db.banquets) db.banquets = [];
       if (!db.groups) db.groups = {};
       if (!db.stamps) db.stamps = {};
+      if (!db.baseline) db.baseline = {};
       return db;
     } catch (e) { return null; }
   }
@@ -338,6 +366,30 @@ class Component extends DCLogic {
     db.stamps[weekIso + '|' + section] = Date.now();
   }
 
+  // Базовые значения наценки и себестоимости шеф вписывает руками.
+  // На расчёты они не влияют — это ориентир для сравнения.
+  baselineKey(metric, section, category, name) {
+    return [metric, section, category, name || ''].join('|');
+  }
+  getBaseline(metric, section, category, name) {
+    const v = (this.state.db.baseline || {})[this.baselineKey(metric, section, category, name)];
+    return v == null ? '' : String(v);
+  }
+  setBaseline(metric, section, category, name, raw) {
+    const db = this.state.db;
+    if (!db.baseline) db.baseline = {};
+    const key = this.baselineKey(metric, section, category, name);
+    const text = String(raw == null ? '' : raw).replace(',', '.').trim();
+    if (!text) delete db.baseline[key];
+    else {
+      const num = Number(text);
+      if (!isFinite(num)) return;
+      db.baseline[key] = num;
+    }
+    this.persist(db);
+    this.setState({ db });
+  }
+
   deleteWeekSection(weekIso, section) {
     const db = this.state.db;
     if (!db.weeks[weekIso]) return;
@@ -388,6 +440,7 @@ class Component extends DCLogic {
       out.itemCategory[section] = { ...(theirs.itemCategory && theirs.itemCategory[section]), ...out.itemCategory[section] };
     }
     out.groups = { ...(theirs.groups || {}), ...(out.groups || {}) };
+    out.baseline = { ...(theirs.baseline || {}), ...(out.baseline || {}) };
 
     const seen = new Set((out.banquets || []).map(b => b.id));
     let banquets = 0;
@@ -429,6 +482,7 @@ class Component extends DCLogic {
         if (res.banquets) parts.push(`банкетов: ${res.banquets}`);
         const summary = parts.length ? parts.join(', ') : 'нового в файле не оказалось';
         if (!window.confirm(`Объединить базы?\n\n${summary}.\n\nВаши данные не пропадут: недели, которых нет в файле, останутся на месте.`)) return;
+        this.dropWeeksBefore(res.db, this.seedCutoff());
         this.persist(res.db);
         this.setState({ db: res.db, importError: '', uploadLog: [`База объединена с файлом «${file.name}»: ${summary}.`] });
       } catch (err) {
@@ -754,6 +808,8 @@ class Component extends DCLogic {
     if (categoryFilter.length) tableRows = tableRows.filter(r => categoryFilter.includes(r.category));
     const searchNorm = normName(search);
     const tableMetric = this.state.tableMetric;
+    // столбец с базовым значением нужен только там, где шеф с ним сравнивает
+    const showBaseline = tableMetric === 'markup' || tableMetric === 'cost';
     const emptyAgg = () => ({ qty: 0, revenue: 0, profit: 0, costTotal: 0 });
     const addAgg = (a, b) => { a.qty += b.qty || 0; a.revenue += b.revenue || 0; a.profit += b.profit || 0; a.costTotal += b.costTotal || 0; };
     const metricValue = (agg, metric) => {
@@ -826,11 +882,17 @@ class Component extends DCLogic {
         expanded,
         arrow: expanded ? '▾' : '▸',
         onToggle: () => this.toggleCategory(c.key),
+        baseline: showBaseline ? this.getBaseline(tableMetric, section, c.name, null) : '',
+        onBaselineChange: (e) => this.setBaseline(tableMetric, section, c.name, null, e.target.value),
+        // клик по полю не должен сворачивать категорию
+        onBaselineClick: (e) => e.stopPropagation(),
         // Нет записи за неделю — значит данных нет, а не продано на ноль
         weekCells: weeksSel.map(wk => (c.byWeek.has(wk) ? metricValue(c.byWeek.get(wk), tableMetric) : '—')),
         totalCell: metricValue(c.total, tableMetric),
         items: items.map(it => ({
           name: it.name,
+          baseline: showBaseline ? this.getBaseline(tableMetric, section, c.name, it.name) : '',
+          onBaselineChange: (e) => this.setBaseline(tableMetric, section, c.name, it.name, e.target.value),
           weekCells: weeksSel.map(wk => (it.weekMap.has(wk) ? metricValue(it.weekMap.get(wk), tableMetric) : '—')),
           totalCell: metricValue(it.total, tableMetric),
         })),
@@ -847,7 +909,9 @@ class Component extends DCLogic {
     }
     const grandTotalCells = weeksSel.map(wk => (grandByWeek.has(wk) ? metricValue(grandByWeek.get(wk), tableMetric) : '—'));
     const grandTotalCell = metricValue(grandTotalAgg, tableMetric);
-    const tableGridCols = `minmax(220px,260px) repeat(${weeksSel.length}, 100px) 110px`;
+    const tableGridCols = showBaseline
+      ? `minmax(220px,260px) 96px repeat(${weeksSel.length}, 100px) 110px`
+      : `minmax(220px,260px) repeat(${weeksSel.length}, 100px) 110px`;
 
     const metricDefs = [
       { key: 'markup', label: 'Наценка' },
@@ -1001,7 +1065,8 @@ class Component extends DCLogic {
       trendTotalBg: tT.bg, trendTotalColor: tT.color, trendKitchenBg: tK.bg, trendKitchenColor: tK.color, trendBarBg: tB.bg, trendBarColor: tB.color,
       compareRevChart, compareProfitChart,
       topPanels,
-      tableGridCols,
+      tableGridCols, showBaseline,
+      baselineHeader: tableMetric === 'markup' ? 'База, %' : 'База, ₽',
       weekColumns,
       metricTags,
       categoryRows, noCategoryRows: categoryRows.length === 0,

@@ -10,22 +10,12 @@ const read = (p) => readFileSync(p, 'utf8')
 
 const history = JSON.parse(read('data/history.json'))
 
+// Данные берём только из настоящих выгрузок. Всё, что раньше переносилось из
+// ручного отчёта, отброшено: там встречались незаполненные итоги по категориям
+// и сдвиг бара на неделю. Из ручного отчёта остаётся только состав групп бара.
+const CUTOFF = '2026-05-04'
+
 const seed = {}
-for (const pos of history.positions) {
-  for (const [week, values] of Object.entries(pos.weeks)) {
-    if (!seed[week]) seed[week] = {}
-    if (!seed[week][pos.section]) seed[week][pos.section] = []
-    seed[week][pos.section].push({
-      category: pos.category,
-      name: pos.name,
-      markup: values.markup ?? null,
-      cost: values.cost ?? null,
-      qty: values.qty ?? null,
-      revenue: values.revenue ?? null,
-      profit: values.profit ?? null,
-    })
-  }
-}
 
 // Недели, для которых есть настоящая выгрузка, перекрывают ручной отчёт:
 // экспорт из учётной системы точнее, чем цифры, перенесённые руками.
@@ -48,6 +38,7 @@ if (exportFiles.length) {
       const list = parsed.remainders.map((r) => `${r.category} +${r.qty} шт`).join(', ')
       console.warn(`  ${file}: итог больше суммы строк (${list})`)
     }
+    if (parsed.week < CUTOFF) continue
     if (!seed[parsed.week]) seed[parsed.week] = {}
     if (seed[parsed.week][parsed.section]) overridden++
     seed[parsed.week][parsed.section] = parsed.rows.map((r) => ({
@@ -114,6 +105,10 @@ ${read('vendor/support.js')}
      понимает, что файл обновили, и подмешивает новые недели к тому,
      что уже накоплено в браузере. -->
 <script type="text/plain" id="seed-version">${seedVersion}</script>
+<!-- Недели раньше этой даты в отчёте не ведутся: до неё данные переносились
+     руками и им нельзя доверять. При обновлении файла такие недели удаляются
+     и у тех, кто открывал прошлые версии. -->
+<script type="text/plain" id="seed-cutoff">${CUTOFF}</script>
 </head>
 <body>
 <x-dc>
@@ -133,6 +128,6 @@ ${read('src/app.js')}
 writeFileSync('отчет.html', html)
 console.log(
   `отчет.html собран: ${(html.length / 1024 / 1024).toFixed(2)} МБ · ` +
-    `недель ${Object.keys(seed).length} · заменено выгрузками ${overridden} · ` +
+    `недель ${Object.keys(seed).length} (с ${CUTOFF}) · заменено выгрузками ${overridden} · ` +
     `категорий бара с группой ${Object.keys(groupSeed).length} · версия данных ${seedVersion}`,
 )

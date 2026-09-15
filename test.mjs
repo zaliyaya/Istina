@@ -50,7 +50,7 @@ const w = open(null)
 await wait(800)
 const t0 = text(w)
 ok(/Истина · Анализ продаж/.test(t0), 'заголовок на месте')
-ok(/37 недель в базе/.test(t0), 'в базе 37 недель', (/(\d+) недел\S* в базе/.exec(t0) || [])[0])
+ok(/19 недель в базе/.test(t0), 'в базе 19 недель', (/(\d+) недел\S* в базе/.exec(t0) || [])[0])
 ok(/Выручка/.test(t0) && /Прибыль/.test(t0) && /Средняя наценка/.test(t0), 'показатели выведены')
 ok(/Кухня/.test(t0) && /Бар/.test(t0), 'разделы кухня и бар')
 ok(/Доля в продажах/.test(t0), 'блок долей')
@@ -60,7 +60,7 @@ ok(!/\{"20\d\d-/.test(t0), 'исходные данные не вывалили�
 const saved = w.localStorage.getItem('istina-sales-db-v2')
 ok(!!saved && saved.length > 100000, 'база сохранена в браузере: ' + (saved ? (saved.length / 1024).toFixed(0) + ' КБ' : 'нет'))
 const db0 = JSON.parse(saved)
-ok(Object.keys(db0.weeks).length === 37, 'в сохранённой базе 37 недель', String(Object.keys(db0.weeks).length))
+ok(Object.keys(db0.weeks).length === 19, 'в сохранённой базе 19 недель', String(Object.keys(db0.weeks).length))
 
 // суммы за неделю 31.08 должны совпасть с выгрузками: 168 676 + 165 284
 const wk = db0.weeks['2026-08-31']
@@ -137,7 +137,7 @@ ok(
 console.log('\n[4] данные переживают перезапуск')
 const w3 = open(saved)
 await wait(800)
-ok(/37 недель в базе/.test(text(w3)), 'после перезапуска недели на месте')
+ok(/19 недель в базе/.test(text(w3)), 'после перезапуска недели на месте')
 
 
 
@@ -422,7 +422,7 @@ ok(ownStamp > 0, 'своя загрузка помечена свежим вре
 // приходит новый файл отчёта: версия данных другая, добавлена новая неделя
 const bumped = html
   .replace(/id="seed-version">[^<]*</, 'id="seed-version">99-2026-09-07<')
-  .replace(/"2026-08-31":/, '"2026-09-07":{"kitchen":[{"category":"ТЕСТ","name":"Новое блюдо","markup":100,"cost":10,"qty":5,"revenue":200,"profit":100}]},"2026-08-31":')
+  .replace('id="seed-data">{', 'id="seed-data">{"2026-09-14":{"kitchen":[{"category":"ТЕСТ","name":"Новое блюдо","markup":100,"cost":10,"qty":5,"revenue":200,"profit":100}]},')
 
 const dom13 = new JSDOM(bumped, {
   url: 'http://localhost/otchet.html',
@@ -436,11 +436,11 @@ const dom13 = new JSDOM(bumped, {
 })
 await wait(1000)
 const after13 = JSON.parse(dom13.window.localStorage.getItem('istina-sales-db-v2'))
-ok(!!after13.weeks['2026-09-07'], 'новая неделя из обновлённого файла появилась')
+ok(!!after13.weeks['2026-09-14'], 'новая неделя из обновлённого файла появилась')
 ok(!!after13.weeks['2026-08-10'] && !!after13.weeks['2026-08-10'].kitchen, 'своя загрузка на месте')
 ok(after13.stamps['2026-08-10|kitchen'] === ownStamp, 'своя неделя не перезаписана вшитой')
 ok(after13.seedVersion === '99-2026-09-07', 'версия обновилась', String(after13.seedVersion))
-ok(/37 недель в базе/.test(text(dom13.window)), 'счётчик недель вырос', text(dom13.window).slice(0, 80))
+ok(/20 недель в базе/.test(text(dom13.window)), 'счётчик недель вырос', text(dom13.window).slice(0, 80))
 
 // ---------- 14. наценка совпадает с выгрузкой ----------
 console.log('\n[14] наценка считается как в выгрузке')
@@ -473,6 +473,78 @@ ok(Math.abs(shown[2] - barMarkup) < 0.06, `бар: на экране ${shown[2]}
 ok(Math.abs(shown[1] - 303.55) < 0.06, 'кухня совпала с «Итого» выгрузки (303,55%)', String(shown[1]))
 ok(Math.abs(shown[2] - 272.2) < 0.06, 'бар совпал с «Итого» выгрузки (272,20%)', String(shown[2]))
 ok(/,\d%/.test(t14), 'наценка выводится с десятыми')
+
+// ---------- 15. недели до отсечки не возвращаются ----------
+console.log('\n[15] старые недели, перенесённые руками, удалены')
+const cut = JSON.parse(saved)
+ok(Object.keys(cut.weeks).every((w) => w >= '2026-05-04'), 'в базе только недели с 4 мая', Object.keys(cut.weeks).sort()[0])
+
+// база со старой неделей внутри — например, у коллеги остался прошлый файл
+const old = JSON.parse(saved)
+old.weeks['2026-01-05'] = { kitchen: [{ category: 'СТАРОЕ', name: 'Позиция', qty: 1, revenue: 100, profit: 50 }] }
+const w15 = open(JSON.stringify(old))
+await wait(900)
+const db15 = JSON.parse(w15.localStorage.getItem('istina-sales-db-v2'))
+ok(!db15.weeks['2026-01-05'], 'старая неделя из чужой базы не осталась')
+ok(Object.keys(db15.weeks).length === 19, 'недель по-прежнему 19', String(Object.keys(db15.weeks).length))
+
+// ---------- 16. базовые значения наценки и себестоимости ----------
+console.log('\n[16] базовые значения для шефа')
+const w16 = open(saved)
+await wait(900)
+btn(w16, 'Категории').dispatchEvent(new w16.Event('click', { bubbles: true }))
+await wait(400)
+
+const fields = () => w16.document.querySelectorAll('input[inputmode=decimal]')
+ok(fields().length === 0, 'у выручки столбца «База» нет', String(fields().length))
+
+btn(w16, 'Наценка').dispatchEvent(new w16.Event('click', { bubbles: true }))
+await wait(400)
+ok(fields().length > 5, 'у наценки поля появились: ' + fields().length)
+ok(/База, %/.test(text(w16)), 'колонка подписана «База, %»')
+
+// вписываем значение
+const type = (el, value) => {
+  const setter = Object.getOwnPropertyDescriptor(w16.HTMLInputElement.prototype, 'value').set
+  setter.call(el, value)
+  el.dispatchEvent(new w16.Event('input', { bubbles: true }))
+}
+type(fields()[1], '305,5')
+await wait(400)
+let db16 = JSON.parse(w16.localStorage.getItem('istina-sales-db-v2'))
+const keys = Object.keys(db16.baseline || {})
+ok(keys.length === 1 && keys[0].startsWith('markup|'), 'значение сохранено под наценку', keys.join())
+ok(Object.values(db16.baseline)[0] === 305.5, 'запятая принята как разделитель', String(Object.values(db16.baseline)[0]))
+
+// цифры недель не изменились
+const before16 = [...text(w16).matchAll(/(\d+,\d)%/g)].length
+ok(before16 > 0, 'проценты в таблице на месте')
+
+// у себестоимости — своё поле, не то же самое
+btn(w16, 'Себестоимость').dispatchEvent(new w16.Event('click', { bubbles: true }))
+await wait(400)
+ok(/База, ₽/.test(text(w16)), 'для себестоимости колонка в рублях')
+ok(fields()[1].value === '', 'базовое значение наценки не подставилось в себестоимость', fields()[1].value)
+type(fields()[1], '120')
+await wait(400)
+db16 = JSON.parse(w16.localStorage.getItem('istina-sales-db-v2'))
+ok(Object.keys(db16.baseline).length === 2, 'два независимых значения', Object.keys(db16.baseline).join(' / '))
+
+// стирание
+type(fields()[1], '')
+await wait(400)
+db16 = JSON.parse(w16.localStorage.getItem('istina-sales-db-v2'))
+ok(Object.keys(db16.baseline).length === 1, 'пустое поле удаляет значение')
+
+// значение переживает перезапуск и едет вместе с базой
+const w16b = open(w16.localStorage.getItem('istina-sales-db-v2'))
+await wait(900)
+btn(w16b, 'Категории').dispatchEvent(new w16b.Event('click', { bubbles: true }))
+await wait(300)
+btn(w16b, 'Наценка').dispatchEvent(new w16b.Event('click', { bubbles: true }))
+await wait(400)
+const kept = [...w16b.document.querySelectorAll('input[inputmode=decimal]')].map((i) => i.value).filter(Boolean)
+ok(kept.includes('305.5') || kept.includes('305,5'), 'после перезапуска значение на месте', kept.join())
 
 console.log(failed ? `\n${failed} проверок упало\n` : '\nвсе проверки прошли\n')
 process.exit(failed ? 1 : 0)
