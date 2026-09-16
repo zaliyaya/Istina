@@ -839,7 +839,8 @@ class Component extends DCLogic {
     const searchNorm = normName(search);
     const tableMetric = this.state.tableMetric;
     // столбец с базовым значением нужен только там, где шеф с ним сравнивает
-    const showBaseline = tableMetric === 'markup' || tableMetric === 'cost';
+    // Базовые значения ведёт шеф-повар, поэтому только по кухне
+    const showBaseline = (tableMetric === 'markup' || tableMetric === 'cost') && section === 'kitchen';
     const emptyAgg = () => ({ qty: 0, revenue: 0, profit: 0, costTotal: 0 });
     const addAgg = (a, b) => { a.qty += b.qty || 0; a.revenue += b.revenue || 0; a.profit += b.profit || 0; a.costTotal += b.costTotal || 0; };
     const metricValue = (agg, metric) => {
@@ -849,6 +850,22 @@ class Component extends DCLogic {
       if (metric === 'cost') return agg.qty > 0 ? fmtRub(agg.costTotal / agg.qty) : '—';
       return agg.costTotal > 0 ? fmtPct((agg.profit / agg.costTotal) * 100) : '—';
     };
+    // Низкая наценка подсвечивается: до 100% — красным, до 150% — оранжевым,
+    // до 200% — жёлтым. К остальным показателям это не применяется.
+    const markupColor = (agg) => {
+      if (tableMetric !== 'markup' || !(agg.costTotal > 0)) return '';
+      const pct = (agg.profit / agg.costTotal) * 100;
+      if (pct < 100) return '#b23b3b';
+      if (pct < 150) return '#c4661f';
+      if (pct < 200) return '#a8871f';
+      return '';
+    };
+    const cell = (agg, dim) => ({
+      text: metricValue(agg, tableMetric),
+      color: markupColor(agg) || (dim ? '#5b5850' : ''),
+    });
+    const emptyCell = { text: '—', color: '' };
+
     const sortMetricVal = (agg, metric) => {
       if (metric === 'qty') return agg.qty;
       if (metric === 'revenue') return agg.revenue;
@@ -917,14 +934,14 @@ class Component extends DCLogic {
         // клик по полю не должен сворачивать категорию
         onBaselineClick: (e) => e.stopPropagation(),
         // Нет записи за неделю — значит данных нет, а не продано на ноль
-        weekCells: weeksSel.map(wk => (c.byWeek.has(wk) ? metricValue(c.byWeek.get(wk), tableMetric) : '—')),
-        totalCell: metricValue(c.total, tableMetric),
+        weekCells: weeksSel.map(wk => (c.byWeek.has(wk) ? cell(c.byWeek.get(wk)) : emptyCell)),
+        totalCell: cell(c.total),
         items: items.map(it => ({
           name: it.name,
           baseline: showBaseline ? this.getBaseline(tableMetric, section, c.name, it.name) : '',
           onBaselineChange: (e) => this.setBaseline(tableMetric, section, c.name, it.name, e.target.value),
-          weekCells: weeksSel.map(wk => (it.weekMap.has(wk) ? metricValue(it.weekMap.get(wk), tableMetric) : '—')),
-          totalCell: metricValue(it.total, tableMetric),
+          weekCells: weeksSel.map(wk => (it.weekMap.has(wk) ? cell(it.weekMap.get(wk), true) : emptyCell)),
+          totalCell: cell(it.total),
         })),
       };
     });
@@ -937,8 +954,8 @@ class Component extends DCLogic {
         addAgg(grandByWeek.get(wk), agg);
       }
     }
-    const grandTotalCells = weeksSel.map(wk => (grandByWeek.has(wk) ? metricValue(grandByWeek.get(wk), tableMetric) : '—'));
-    const grandTotalCell = metricValue(grandTotalAgg, tableMetric);
+    const grandTotalCells = weeksSel.map(wk => (grandByWeek.has(wk) ? cell(grandByWeek.get(wk)) : emptyCell));
+    const grandTotalCell = cell(grandTotalAgg);
     const tableGridCols = showBaseline
       ? `minmax(220px,260px) 96px repeat(${weeksSel.length}, 100px) 110px`
       : `minmax(220px,260px) repeat(${weeksSel.length}, 100px) 110px`;

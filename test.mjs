@@ -283,7 +283,8 @@ const gridRows2 = [...w9.document.querySelectorAll('div')].filter(
   (d) => d.children.length > 4 && [...d.children].every((c) => c.children.length <= 1),
 )
 const plusQty = gridRows2.map(cellsOf).find((c) => /Безлимитный Aperol Spritz 250мл$/.test(c[0]) && /^(\+|Плюс)/.test(c[0]))
-ok(plusQty && Number(plusQty[1].replace(/\s/g, '')) > 0, 'в штуках у комплиментов есть значения', plusQty ? plusQty.slice(0, 4).join('/') : '—')
+const firstNum = plusQty ? Number(plusQty.slice(1).find((x) => /^[\d\s]+$/.test(x) && x.trim()) || '0'.replace(/\s/g, '')) : 0
+ok(firstNum > 0, 'в штуках у комплиментов есть значения', plusQty ? plusQty.slice(0, 4).join('/') : '—')
 
 // ---------- 10. предупреждение о неполной выгрузке ----------
 console.log('\n[10] неполная выгрузка видна в журнале')
@@ -569,6 +570,57 @@ ok(Math.abs(mk(db17.weeks['2026-08-24'].kitchen) - 283.75) < 0.02, 'неделя
 ok(!db17.weeks['2026-08-24'].kitchen.some((x) => x.category === 'СТАРОЕ'), 'старые строки убраны')
 ok(db17.weeks['2026-08-10'].kitchen.some((x) => x.name === 'Своя загрузка'), 'своя загрузка не затёрта')
 ok(db17.seedVersion === '19-2026-09-07', 'версия данных обновилась', String(db17.seedVersion))
+
+// ---------- 18. подсветка низкой наценки и оформление таблицы ----------
+console.log('\n[18] подсветка, столбцы и закреплённая панель')
+const w18 = open(saved)
+await wait(900)
+btn(w18, 'Категории').dispatchEvent(new w18.Event('click', { bubbles: true }))
+await wait(300)
+btn(w18, 'Наценка').dispatchEvent(new w18.Event('click', { bubbles: true }))
+await wait(500)
+
+const pctCells = () =>
+  [...w18.document.querySelectorAll('div')].filter(
+    (d) => /^[\d\s,]+%$/.test(d.textContent.trim()) && d.querySelectorAll('div').length === 0,
+  )
+const val = (d) => Number(d.textContent.trim().replace(/[\s%]/g, '').replace(',', '.'))
+const colorOf = (d) => d.style.color || ''
+
+const cells18 = pctCells()
+ok(cells18.length > 5, 'проценты в таблице найдены: ' + cells18.length)
+const wrong = cells18.filter((d) => {
+  const v = val(d)
+  const c = colorOf(d)
+  if (v < 100) return !/178, 59, 59|b23b3b/.test(c)
+  if (v < 150) return !/196, 102, 31|c4661f/.test(c)
+  if (v < 200) return !/168, 135, 31|a8871f/.test(c)
+  return c !== ''
+})
+ok(wrong.length === 0, 'цвет соответствует порогам', wrong.map((d) => d.textContent.trim() + ' → ' + colorOf(d)).slice(0, 3).join(' / '))
+const low = cells18.filter((d) => val(d) < 200)
+ok(low.length > 0, 'есть подсвеченные значения: ' + low.map((d) => d.textContent.trim()).join(', '))
+
+// ручной ввод только у кухни
+ok(w18.document.querySelectorAll('input[inputmode=decimal]').length > 0, 'у кухни поля «База» есть')
+;[...w18.document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Бар')
+  .dispatchEvent(new w18.Event('click', { bubbles: true }))
+await wait(500)
+ok(w18.document.querySelectorAll('input[inputmode=decimal]').length === 0, 'у бара полей «База» нет')
+
+// закреплённая панель с показателями
+// браузер нормализует inline-стили, поэтому читаем через style
+const sticky = [...w18.document.querySelectorAll('div')].find(
+  (d) => d.style.position === 'sticky' && d.style.zIndex === '30',
+)
+ok(!!sticky, 'панель фильтров закреплена наверху')
+ok(/Наценка/.test(sticky.textContent) && /Себестоимость/.test(sticky.textContent), 'показатели внутри закреплённой панели')
+
+// столбец «Итого» выделен фоном
+const totals = [...w18.document.querySelectorAll('div')].filter(
+  (d) => d.style.background && d.style.background.replace(/\s/g, '') === 'rgb(230,223,208)',
+)
+ok(totals.length >= 2, 'шапка и итоговая строка столбца «Итого» выделены', String(totals.length))
 
 console.log(failed ? `\n${failed} проверок упало\n` : '\nвсе проверки прошли\n')
 process.exit(failed ? 1 : 0)
