@@ -26,6 +26,7 @@
     <nav style="display:flex;gap:6px;margin-bottom:20px;background:#eeeae1;border-radius:10px;padding:4px;width:fit-content">
       <button onClick="{{ goDashboard }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
       <button onClick="{{ goTable }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
+      <button onClick="{{ goInsights }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
       <button onClick="{{ goData }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
     </nav>
 
@@ -49,7 +50,7 @@
         </sc-if>
 
         <div style="display:flex;gap:4px;background:#eeeae1;border-radius:8px;padding:3px">
-          <sc-if value="{{ tabIsDashboard }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ sectionAllAvailable }}" hint-placeholder-val="{{ true }}">
             <button onClick="{{ setSectionAll }}" style="border:none;font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;background:{{ sectionAllBg }};color:{{ sectionAllColor }}">Общее</button>
           </sc-if>
           <button onClick="{{ setSectionKitchen }}" style="border:none;font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;background:{{ sectionKitchenBg }};color:{{ sectionKitchenColor }}">Кухня</button>
@@ -135,6 +136,24 @@
             </div>
           </div>
         </sc-for>
+
+        <sc-if value="{{ hasHighlights }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:18px 20px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+              <div style="font-size:14.5px;font-weight:600;color:#5b5850">Главное за период</div>
+              <button onClick="{{ goInsights }}" style="border:none;background:transparent;font:inherit;font-size:13px;font-weight:600;color:#3d5a80;cursor:pointer;padding:0">{{ highlightsMoreLabel }} →</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">
+              <sc-for list="{{ highlightCards }}" as="ins" hint-placeholder-count="3">
+                <div style="border-left:4px solid {{ ins.color }};background:{{ ins.bg }};border-radius:10px;padding:10px 12px">
+                  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:{{ ins.color }};margin-bottom:4px">{{ ins.kindLabel }} · {{ ins.sectionLabel }}</div>
+                  <div style="font-size:13.5px;font-weight:600;line-height:1.35">{{ ins.title }}</div>
+                  <div style="font-size:12px;color:#5b5850;margin-top:4px">{{ ins.impactLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
 
         <div style="display:grid;grid-template-columns:{{ dashboardTopCols }};gap:16px;margin-bottom:16px;align-items:stretch">
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column">
@@ -282,6 +301,78 @@
               </sc-for>
             </div>
           </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- INSIGHTS TAB -->
+    <sc-if value="{{ tabIsInsights }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;align-items:start">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <div style="font-size:14.5px;font-weight:600;color:#5b5850">Инсайты за период</div>
+            <div style="display:flex;gap:4px;background:#eeeae1;border-radius:8px;padding:3px">
+              <sc-for list="{{ insightKindTags }}" as="k" hint-placeholder-count="4">
+                <button onClick="{{ k.onClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;background:{{ k.bg }};color:{{ k.color }}">{{ k.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <sc-for list="{{ insightCards }}" as="ins" hint-placeholder-count="4">
+            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-left:4px solid {{ ins.color }};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:{{ ins.color }};background:{{ ins.bg }};padding:3px 8px;border-radius:5px">{{ ins.kindLabel }}</span>
+                <span style="font-size:11.5px;font-weight:600;color:{{ ins.sectionColor }}">{{ ins.sectionLabel }}</span>
+                <span style="margin-left:auto;font-size:12px;font-weight:600;color:#5b5850">{{ ins.impactLabel }}</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;line-height:1.35;margin-bottom:4px">{{ ins.title }}</div>
+              <div style="font-size:13px;color:#5b5850;line-height:1.5;margin-bottom:8px">{{ ins.detail }}</div>
+              <div style="font-size:12.5px;line-height:1.5;background:#faf9f6;border-radius:8px;padding:8px 10px">
+                <div><span style="font-weight:700">Гипотеза. </span>{{ ins.hypothesis }}</div>
+                <div style="margin-top:3px"><span style="font-weight:700">Что сделать. </span>{{ ins.check }}</div>
+              </div>
+              <div style="display:flex;justify-content:flex-end;margin-top:8px">
+                <button onClick="{{ ins.onAdd }}" style="border:1px solid rgba(32,32,29,0.14);background:{{ ins.addBg }};color:{{ ins.addColor }};font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer">{{ ins.addLabel }}</button>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noInsightCards }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:12px;padding:24px;text-align:center;color:#8a8579;font-size:13px">{{ noInsightsLabel }}</div>
+          </sc-if>
+        </div>
+
+        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:18px 20px;position:sticky;top:84px">
+          <div style="font-size:14.5px;font-weight:600;color:#5b5850;margin-bottom:4px">Гипотезы</div>
+          <div style="font-size:12.5px;color:#8a8579;margin-bottom:12px;line-height:1.45">Добавьте гипотезу из инсайта или свою. Для позиции отчёт сам сравнит средние продажи и прибыль в неделю до и после старта.</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <input type="text" value="{{ hypothesisDraft }}" onChange="{{ onHypothesisDraftChange }}" placeholder="Своя гипотеза…" style="flex:1;min-width:0;font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
+            <button onClick="{{ onAddOwnHypothesis }}" style="font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:none;background:#20201d;color:#f7f5f0;cursor:pointer;white-space:nowrap">Добавить</button>
+          </div>
+          <sc-for list="{{ hypothesisRows }}" as="h" hint-placeholder-count="3">
+            <div style="border-top:1px solid rgba(32,32,29,0.08);padding:12px 0">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+                <div style="font-size:13.5px;font-weight:600;line-height:1.4">{{ h.title }}</div>
+                <button onClick="{{ h.onDelete }}" title="Удалить" style="border:none;background:transparent;color:#b3ada0;font-size:15px;cursor:pointer;padding:0 2px;line-height:1">×</button>
+              </div>
+              <sc-if value="{{ h.hasText }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:12.5px;color:#5b5850;line-height:1.45;margin-top:3px">{{ h.text }}</div>
+              </sc-if>
+              <div style="font-size:11.5px;color:#8a8579;margin-top:4px">{{ h.meta }}</div>
+              <sc-if value="{{ h.hasEffect }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12px;line-height:1.5;margin-top:6px;background:#faf9f6;border-radius:7px;padding:6px 9px">
+                  <div>{{ h.effectBefore }}</div>
+                  <div style="font-weight:600;color:{{ h.effectColor }}">{{ h.effectAfter }}</div>
+                </div>
+              </sc-if>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">
+                <sc-for list="{{ h.statuses }}" as="st" hint-placeholder-count="4">
+                  <button onClick="{{ st.onClick }}" style="border:none;font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;background:{{ st.bg }};color:{{ st.color }}">{{ st.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noHypotheses }}" hint-placeholder-val="{{ false }}">
+            <div style="border-top:1px solid rgba(32,32,29,0.08);padding:14px 0 2px;color:#8a8579;font-size:13px">Гипотез пока нет</div>
+          </sc-if>
         </div>
       </div>
     </sc-if>
