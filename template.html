@@ -307,8 +307,8 @@
 
     <!-- INSIGHTS TAB -->
     <sc-if value="{{ tabIsInsights }}" hint-placeholder-val="{{ false }}">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;align-items:start">
-        <div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+        <div style="flex:2.4 1 420px;min-width:0">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
             <div style="font-size:14.5px;font-weight:600;color:#5b5850">Инсайты за период</div>
             <div style="display:flex;gap:4px;background:#eeeae1;border-radius:8px;padding:3px">
@@ -340,12 +340,12 @@
           </sc-if>
         </div>
 
-        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:18px 20px;position:sticky;top:84px">
+        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;flex:1 1 260px;min-width:0">
           <div style="font-size:14.5px;font-weight:600;color:#5b5850;margin-bottom:4px">Гипотезы</div>
-          <div style="font-size:12.5px;color:#8a8579;margin-bottom:12px;line-height:1.45">Добавьте гипотезу из инсайта или свою. Для позиции отчёт сам сравнит средние продажи и прибыль в неделю до и после старта.</div>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <input type="text" value="{{ hypothesisDraft }}" onChange="{{ onHypothesisDraftChange }}" placeholder="Своя гипотеза…" style="flex:1;min-width:0;font:inherit;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
-            <button onClick="{{ onAddOwnHypothesis }}" style="font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:none;background:#20201d;color:#f7f5f0;cursor:pointer;white-space:nowrap">Добавить</button>
+          <div style="font-size:11.5px;color:#8a8579;margin-bottom:8px;line-height:1.4">Эффект до и после старта считается сам.</div>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input type="text" value="{{ hypothesisDraft }}" onChange="{{ onHypothesisDraftChange }}" placeholder="Своя гипотеза…" style="flex:1;min-width:0;font:inherit;font-size:12.5px;padding:5px 8px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
+            <button onClick="{{ onAddOwnHypothesis }}" title="Добавить" style="font:inherit;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;background:#20201d;color:#f7f5f0;cursor:pointer">＋</button>
           </div>
           <sc-for list="{{ hypothesisRows }}" as="h" hint-placeholder-count="3">
             <div style="border-top:1px solid rgba(32,32,29,0.08);padding:12px 0">
