@@ -3,22 +3,37 @@
 // Как подключить: в таблице «Расширения → Apps Script», вставить этот код,
 // «Начать развёртывание → Новое развёртывание → Веб-приложение»,
 // «Запуск от имени: я», «Доступ: все», скопировать адрес веб-приложения.
+// Обновить код: вставить новый, «Начать развёртывание → Управление
+// развёртываниями → карандаш → Версия: новая версия» — адрес не меняется.
 
-const COLUMNS = ['id', 'title', 'text', 'item', 'section', 'startWeek', 'created', 'status', 'updated'];
+// Колонки, которые сайт пишет всегда. Новые поля гипотез добавляются в
+// таблицу сами — отдельной колонкой справа.
+const BASE_COLUMNS = ['id', 'title', 'text', 'item', 'section', 'startWeek', 'created', 'status', 'note', 'updated'];
 
 function sheet_() {
   const sh = SpreadsheetApp.getActive().getSheets()[0];
-  sh.getRange('A:I').setNumberFormat('@'); // даты и числа храним как текст
-  if (sh.getLastRow() === 0) sh.appendRow(COLUMNS);
+  if (sh.getLastRow() === 0) sh.appendRow(BASE_COLUMNS);
   return sh;
+}
+
+function columns_(sh, extra) {
+  const cols = sh.getRange(1, 1, 1, Math.max(1, sh.getLastColumn())).getDisplayValues()[0].filter(String);
+  const missing = BASE_COLUMNS.concat(extra || []).filter(c => cols.indexOf(c) < 0);
+  if (missing.length) {
+    sh.getRange(1, cols.length + 1, 1, missing.length).setValues([missing]);
+    cols.push.apply(cols, missing);
+  }
+  sh.getRange(1, 1, sh.getMaxRows(), cols.length).setNumberFormat('@'); // даты и числа храним как текст
+  return cols;
 }
 
 function list_() {
   const sh = sheet_();
-  const rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, COLUMNS.length).getDisplayValues() : [];
+  const cols = columns_(sh);
+  const rows = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, cols.length).getDisplayValues() : [];
   return rows.filter(r => r[0]).map(r => {
     const h = {};
-    COLUMNS.forEach((c, i) => { h[c] = r[i]; });
+    cols.forEach((c, i) => { h[c] = r[i]; });
     try { h.item = h.item ? JSON.parse(h.item) : null; } catch (e) { h.item = null; }
     return h;
   });
@@ -47,12 +62,15 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const sh = sheet_();
     if (body.action === 'upsert') {
+      const keys = [];
+      for (const h of body.hypotheses || []) for (const k in h) if (keys.indexOf(k) < 0) keys.push(k);
+      const cols = columns_(sh, keys);
       for (const h of body.hypotheses || []) {
         if (!h || !h.id) continue;
-        const row = COLUMNS.map(c => c === 'item' ? (h.item ? JSON.stringify(h.item) : '')
+        const row = cols.map(c => c === 'item' ? (h.item ? JSON.stringify(h.item) : '')
           : c === 'updated' ? new Date().toISOString() : String(h[c] == null ? '' : h[c]));
         const at = rowOf_(sh, h.id);
-        if (at) sh.getRange(at, 1, 1, COLUMNS.length).setValues([row]);
+        if (at) sh.getRange(at, 1, 1, cols.length).setValues([row]);
         else sh.appendRow(row);
       }
     } else if (body.action === 'delete') {

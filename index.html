@@ -2988,7 +2988,7 @@ window.__resources = {}
             </div>
           </div>
           <sc-for list="{{ insightCards }}" as="ins" hint-placeholder-count="4">
-            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-left:4px solid {{ ins.color }};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-left:4px solid {{ ins.color }};border-radius:12px;padding:14px 16px;margin-bottom:10px;opacity:{{ ins.opacity }}">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
                 <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:{{ ins.color }};background:{{ ins.bg }};padding:3px 8px;border-radius:5px">{{ ins.kindLabel }}</span>
                 <span style="font-size:11.5px;font-weight:600;color:{{ ins.sectionColor }}">{{ ins.sectionLabel }}</span>
@@ -3000,7 +3000,11 @@ window.__resources = {}
                 <div><span style="font-weight:700">Гипотеза. </span>{{ ins.hypothesis }}</div>
                 <div style="margin-top:3px"><span style="font-weight:700">Что сделать. </span>{{ ins.check }}</div>
               </div>
-              <div style="display:flex;justify-content:flex-end;margin-top:8px">
+              <sc-if value="{{ ins.hasFeedback }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12.5px;color:#5b5850;margin-top:8px;padding:6px 10px;border-left:3px solid #b3ada0;background:#faf9f6;border-radius:0 6px 6px 0">{{ ins.feedback }}</div>
+              </sc-if>
+              <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
+                <button onClick="{{ ins.onReject }}" style="border:1px solid rgba(32,32,29,0.14);background:#ffffff;color:#8a8579;font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer">{{ ins.rejectLabel }}</button>
                 <button onClick="{{ ins.onAdd }}" style="border:1px solid rgba(32,32,29,0.14);background:{{ ins.addBg }};color:{{ ins.addColor }};font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer">{{ ins.addLabel }}</button>
               </div>
             </div>
@@ -3033,6 +3037,12 @@ window.__resources = {}
                   <div style="font-weight:600;color:{{ h.effectColor }}">{{ h.effectAfter }}</div>
                 </div>
               </sc-if>
+              <div style="display:flex;gap:4px;margin-top:8px">
+                <input type="text" value="{{ h.noteValue }}" onChange="{{ h.onNoteChange }}" placeholder="Почему так? Что узнали?" style="flex:1;min-width:0;font:inherit;font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
+                <sc-if value="{{ h.noteDirty }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ h.onNoteSave }}" style="border:none;font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;background:#20201d;color:#f7f5f0">Сохранить</button>
+                </sc-if>
+              </div>
               <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">
                 <sc-for list="{{ h.statuses }}" as="st" hint-placeholder-count="4">
                   <button onClick="{{ st.onClick }}" style="border:none;font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;background:{{ st.bg }};color:{{ st.color }}">{{ st.label }}</button>
@@ -3182,6 +3192,13 @@ window.__resources = {}
 
     <!-- TABLE TAB -->
     <sc-if value="{{ tabIsTable }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ kitchenLegend }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:12px;color:#5b5850;margin:-2px 0 12px">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#e3f0dc;margin-right:5px"></span>{{ kitchenLegendGood }}</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f8dcd8;margin-right:5px"></span>{{ kitchenLegendBad }}</span>
+          <span style="color:#8a8579">Неделя сравнивается со своим средним за период, «Итого» — с другими позициями. Бизнес-обеды сравниваются только между собой.</span>
+        </div>
+      </sc-if>
       <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden">
         <div style="overflow-x:auto">
           <div style="display:grid;grid-template-columns:{{ tableGridCols }};width:max-content;min-width:100%;padding:12px 16px;background:#f2efe8;font-size:12px;font-weight:700;color:#5b5850;text-transform:uppercase;letter-spacing:0.02em">
@@ -3207,7 +3224,7 @@ window.__resources = {}
                   </div>
                 </sc-if>
                 <sc-for list="{{ cat.weekCells }}" as="cell" hint-placeholder-count="6">
-                  <div style="text-align:right;font-weight:600;color:{{ cell.color }}">{{ cell.text }}</div>
+                  <div style="text-align:right"><span style="font-weight:600;color:{{ cell.color }};background:{{ cell.bg }};border-radius:4px;padding:1px 5px">{{ cell.text }}</span></div>
                 </sc-for>
                 <div style="text-align:right;font-weight:700;background:#efe9dc;margin:-7px -16px -7px 0;padding:7px 16px 7px 8px;color:{{ cat.totalCell.color }}">{{ cat.totalCell.text }}</div>
               </div>
@@ -3221,9 +3238,9 @@ window.__resources = {}
                       </div>
                     </sc-if>
                     <sc-for list="{{ it.weekCells }}" as="cell" hint-placeholder-count="6">
-                      <div style="text-align:right;color:{{ cell.color }}">{{ cell.text }}</div>
+                      <div style="text-align:right"><span style="color:{{ cell.color }};background:{{ cell.bg }};border-radius:4px;padding:1px 5px">{{ cell.text }}</span></div>
                     </sc-for>
-                    <div style="text-align:right;font-weight:600;background:#f5f1e7;margin:-6px -16px -6px 0;padding:6px 16px 6px 8px;color:{{ it.totalCell.color }}">{{ it.totalCell.text }}</div>
+                    <div style="text-align:right;font-weight:600;background:#f5f1e7;margin:-6px -16px -6px 0;padding:6px 16px 6px 8px;color:{{ it.totalCell.color }}"><span style="background:{{ it.totalCell.bg }};border-radius:4px;padding:1px 5px">{{ it.totalCell.text }}</span></div>
                   </div>
                 </sc-for>
               </sc-if>
@@ -3678,7 +3695,7 @@ window.__resources = {}
             </div>
           </div>
           <sc-for list="{{ insightCards }}" as="ins" hint-placeholder-count="4">
-            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-left:4px solid {{ ins.color }};border-radius:12px;padding:14px 16px;margin-bottom:10px">
+            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-left:4px solid {{ ins.color }};border-radius:12px;padding:14px 16px;margin-bottom:10px;opacity:{{ ins.opacity }}">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
                 <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:{{ ins.color }};background:{{ ins.bg }};padding:3px 8px;border-radius:5px">{{ ins.kindLabel }}</span>
                 <span style="font-size:11.5px;font-weight:600;color:{{ ins.sectionColor }}">{{ ins.sectionLabel }}</span>
@@ -3690,7 +3707,11 @@ window.__resources = {}
                 <div><span style="font-weight:700">Гипотеза. </span>{{ ins.hypothesis }}</div>
                 <div style="margin-top:3px"><span style="font-weight:700">Что сделать. </span>{{ ins.check }}</div>
               </div>
-              <div style="display:flex;justify-content:flex-end;margin-top:8px">
+              <sc-if value="{{ ins.hasFeedback }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12.5px;color:#5b5850;margin-top:8px;padding:6px 10px;border-left:3px solid #b3ada0;background:#faf9f6;border-radius:0 6px 6px 0">{{ ins.feedback }}</div>
+              </sc-if>
+              <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
+                <button onClick="{{ ins.onReject }}" style="border:1px solid rgba(32,32,29,0.14);background:#ffffff;color:#8a8579;font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer">{{ ins.rejectLabel }}</button>
                 <button onClick="{{ ins.onAdd }}" style="border:1px solid rgba(32,32,29,0.14);background:{{ ins.addBg }};color:{{ ins.addColor }};font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer">{{ ins.addLabel }}</button>
               </div>
             </div>
@@ -3723,6 +3744,12 @@ window.__resources = {}
                   <div style="font-weight:600;color:{{ h.effectColor }}">{{ h.effectAfter }}</div>
                 </div>
               </sc-if>
+              <div style="display:flex;gap:4px;margin-top:8px">
+                <input type="text" value="{{ h.noteValue }}" onChange="{{ h.onNoteChange }}" placeholder="Почему так? Что узнали?" style="flex:1;min-width:0;font:inherit;font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
+                <sc-if value="{{ h.noteDirty }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ h.onNoteSave }}" style="border:none;font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;background:#20201d;color:#f7f5f0">Сохранить</button>
+                </sc-if>
+              </div>
               <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">
                 <sc-for list="{{ h.statuses }}" as="st" hint-placeholder-count="4">
                   <button onClick="{{ st.onClick }}" style="border:none;font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;background:{{ st.bg }};color:{{ st.color }}">{{ st.label }}</button>
@@ -3872,6 +3899,13 @@ window.__resources = {}
 
     <!-- TABLE TAB -->
     <sc-if value="{{ tabIsTable }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ kitchenLegend }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:12px;color:#5b5850;margin:-2px 0 12px">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#e3f0dc;margin-right:5px"></span>{{ kitchenLegendGood }}</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f8dcd8;margin-right:5px"></span>{{ kitchenLegendBad }}</span>
+          <span style="color:#8a8579">Неделя сравнивается со своим средним за период, «Итого» — с другими позициями. Бизнес-обеды сравниваются только между собой.</span>
+        </div>
+      </sc-if>
       <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden">
         <div style="overflow-x:auto">
           <div style="display:grid;grid-template-columns:{{ tableGridCols }};width:max-content;min-width:100%;padding:12px 16px;background:#f2efe8;font-size:12px;font-weight:700;color:#5b5850;text-transform:uppercase;letter-spacing:0.02em">
@@ -3897,7 +3931,7 @@ window.__resources = {}
                   </div>
                 </sc-if>
                 <sc-for list="{{ cat.weekCells }}" as="cell" hint-placeholder-count="6">
-                  <div style="text-align:right;font-weight:600;color:{{ cell.color }}">{{ cell.text }}</div>
+                  <div style="text-align:right"><span style="font-weight:600;color:{{ cell.color }};background:{{ cell.bg }};border-radius:4px;padding:1px 5px">{{ cell.text }}</span></div>
                 </sc-for>
                 <div style="text-align:right;font-weight:700;background:#efe9dc;margin:-7px -16px -7px 0;padding:7px 16px 7px 8px;color:{{ cat.totalCell.color }}">{{ cat.totalCell.text }}</div>
               </div>
@@ -3911,9 +3945,9 @@ window.__resources = {}
                       </div>
                     </sc-if>
                     <sc-for list="{{ it.weekCells }}" as="cell" hint-placeholder-count="6">
-                      <div style="text-align:right;color:{{ cell.color }}">{{ cell.text }}</div>
+                      <div style="text-align:right"><span style="color:{{ cell.color }};background:{{ cell.bg }};border-radius:4px;padding:1px 5px">{{ cell.text }}</span></div>
                     </sc-for>
-                    <div style="text-align:right;font-weight:600;background:#f5f1e7;margin:-6px -16px -6px 0;padding:6px 16px 6px 8px;color:{{ it.totalCell.color }}">{{ it.totalCell.text }}</div>
+                    <div style="text-align:right;font-weight:600;background:#f5f1e7;margin:-6px -16px -6px 0;padding:6px 16px 6px 8px;color:{{ it.totalCell.color }}"><span style="background:{{ it.totalCell.bg }};border-radius:4px;padding:1px 5px">{{ it.totalCell.text }}</span></div>
                   </div>
                 </sc-for>
               </sc-if>
@@ -4288,14 +4322,18 @@ function buildInsights(ctx) {
   const menu = (a) => !isServiceItem(a.name) && !isRefill(a.name);
 
   // --- по секциям: средние для матрицы меню ---
+  // Бизнес-обеды дешёвые нарочно — зовут гостей днём, — поэтому у кухни
+  // это отдельная группа и с остальным меню не сравнивается.
   const sectionStats = {};
-  for (const sec of ['kitchen', 'bar']) {
-    const items = Array.from(cur.values()).filter(a => a.section === sec && menu(a) && a.qty > 0);
+  const isBiz = (a) => /бизнес/i.test(a.category || '');
+  for (const [key, sec, biz] of [['kitchen', 'kitchen', false], ['kitchen:biz', 'kitchen', true], ['bar', 'bar', false]]) {
+    const items = Array.from(cur.values()).filter(a => a.section === sec && menu(a) && a.qty > 0 && (sec !== 'kitchen' || isBiz(a) === biz));
     if (!items.length) continue;
     const qty = items.reduce((s, a) => s + a.qty, 0);
     const profit = items.reduce((s, a) => s + a.profit, 0);
     const cost = items.reduce((s, a) => s + a.cost, 0);
-    sectionStats[sec] = {
+    sectionStats[key] = {
+      sec, biz,
       items,
       avgQty: qty / items.length,
       avgUnitProfit: qty > 0 ? profit / qty : 0,
@@ -4383,8 +4421,8 @@ function buildInsights(ctx) {
   }
 
   // 4. Хиты с низкой наценкой: поднять цену
-  for (const sec of Object.keys(sectionStats)) {
-    const st = sectionStats[sec];
+  for (const st of Object.values(sectionStats)) {
+    const sec = st.sec;
     if (st.markup == null) continue;
     const horses = st.items
       .filter(a => a.qty >= st.avgQty * 1.3 && a.markup != null && a.markup < st.markup * 0.7 && a.profit > 0)
@@ -4394,7 +4432,7 @@ function buildInsights(ctx) {
       add({
         kind: 'opportunity', section: sec, item: { section: sec, name: a.name },
         title: `«${a.name}» — хит с низкой наценкой`,
-        detail: `${fmtNum(a.qty)} шт ${per}, наценка ${fmtPct(a.markup)} против ${fmtPct(st.markup)} в среднем по разделу. Цена +7% при тех же продажах даст ≈ ${fmtRub(gain)} ${per}.`,
+        detail: `${fmtNum(a.qty)} шт ${per}, наценка ${fmtPct(a.markup)} против ${fmtPct(st.markup)} в среднем ${st.biz ? 'по бизнес-обедам' : 'по разделу'}. Цена +7% при тех же продажах даст ≈ ${fmtRub(gain)} ${per}.`,
         hypothesis: 'Гости берут позицию не из-за цены — небольшое повышение не снизит спрос.',
         check: `Поднять цену на 5–7% и через 2 недели сравнить количество продаж.`,
         impact: gain,
@@ -4404,9 +4442,10 @@ function buildInsights(ctx) {
 
   // 5. Маржинальные, но непопулярные: продвигать. Сравниваем внутри
   // категории, иначе бутылка вина всегда «выгоднее» бокала.
-  for (const sec of Object.keys(sectionStats)) {
+  for (const st of Object.values(sectionStats)) {
+    const sec = st.sec;
     const byCat = new Map();
-    for (const a of sectionStats[sec].items) {
+    for (const a of st.items) {
       if (!byCat.has(a.category)) byCat.set(a.category, []);
       byCat.get(a.category).push(a);
     }
@@ -4457,13 +4496,13 @@ function buildInsights(ctx) {
 
   // 7. Длинный хвост: кандидаты на вывод из меню
   if (nCur >= 4) {
-    for (const sec of Object.keys(sectionStats)) {
-      const st = sectionStats[sec];
+    for (const st of Object.values(sectionStats)) {
+      const sec = st.sec;
       const tail = st.items.filter(a => a.qty <= nCur * 0.5 && a.unitProfit < st.avgUnitProfit).sort((a, b) => a.qty - b.qty);
       if (tail.length < 3) continue;
       add({
         kind: 'info', section: sec,
-        title: `${tail.length} ${pluralItems(tail.length)} ${sec === 'kitchen' ? 'кухни' : 'бара'} почти не продаются`,
+        title: `${tail.length} ${pluralItems(tail.length)} ${st.biz ? 'бизнес-обедов' : sec === 'kitchen' ? 'кухни' : 'бара'} почти не продаются`,
         detail: `Меньше одной продажи в две недели и прибыль с порции ниже средней: ${listNames(tail, 5)}.`,
         hypothesis: 'Эти позиции занимают место в меню и заготовки, но не приносят денег.',
         check: 'Обсудить с шефом и барменом вывод или замену; учесть списания заготовок под них.',
@@ -5318,7 +5357,7 @@ class Component extends DCLogic {
     db.hypotheses = (db.hypotheses || []).concat([{
       id: 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       title: h.title, text: h.text || '', item: h.item || null, section: h.section || '',
-      startWeek, created: isoLocal(new Date()), status: 'active',
+      startWeek, created: isoLocal(new Date()), status: h.status || 'active', note: h.note || '',
     }]);
     this.persist(db);
     this.setState({ db });
@@ -5328,6 +5367,29 @@ class Component extends DCLogic {
     const db = this.state.db;
     if ((db.hypotheses || []).some(h => h.title === ins.hypothesisTitle)) return;
     this.addHypothesis({ title: ins.hypothesisTitle, text: `${ins.hypothesis} ${ins.check}`, item: ins.item, section: ins.section });
+  };
+  // Несогласие с инсайтом сохраняется гипотезой со статусом «Не согласны» и
+  // причиной: так оно попадает в общую таблицу и учитывается при разборе недель.
+  rejectInsight = (ins) => {
+    const note = window.prompt('Почему вы не согласны с этим инсайтом? Это попадёт в общую таблицу гипотез.');
+    if (note == null) return;
+    const db = this.state.db;
+    const existing = (db.hypotheses || []).find(h => h.title === ins.hypothesisTitle);
+    if (existing) {
+      this.setHypothesisStatus(existing.id, 'rejected');
+      this.setHypothesisNote(existing.id, note.trim());
+      return;
+    }
+    this.addHypothesis({ title: ins.hypothesisTitle, text: `${ins.hypothesis} ${ins.check}`, item: ins.item, section: ins.section, status: 'rejected', note: note.trim() });
+  };
+  setHypothesisNote = (id, note) => {
+    const db = this.state.db;
+    db.hypotheses = (db.hypotheses || []).map(h => (h.id === id ? { ...h, note } : h));
+    const drafts = { ...(this.state.noteDrafts || {}) };
+    delete drafts[id];
+    this.persist(db);
+    this.setState({ db, noteDrafts: drafts });
+    this.pushHypotheses({ action: 'upsert', hypotheses: db.hypotheses.filter(h => h.id === id) });
   };
   onHypothesisDraftChange = (e) => this.setState({ hypothesisDraft: e.target.value });
   addOwnHypothesis = () => {
@@ -5751,6 +5813,8 @@ class Component extends DCLogic {
     // Низкая наценка подсвечивается: до 100% — красным, до 150% — оранжевым,
     // до 200% — жёлтым. К остальным показателям это не применяется.
     const markupColor = (agg) => {
+      // у кухни наценка сравнивается относительно (см. kitchenFlags ниже)
+      if (section === 'kitchen') return '';
       if (tableMetric !== 'markup' || !(agg.costTotal > 0)) return '';
       const pct = (agg.profit / agg.costTotal) * 100;
       if (pct < 100) return '#b23b3b';
@@ -5758,11 +5822,34 @@ class Component extends DCLogic {
       if (pct < 200) return '#a8871f';
       return '';
     };
-    const cell = (agg, dim) => ({
+    // Подсветка кухни. Неделя сравнивается со средним этой же строки за
+    // период: заметный рост — зелёным фоном, провал — красным. Итог позиции —
+    // с другими позициями своей группы: бизнес-обеды дешёвые нарочно (зовут
+    // гостей днём), поэтому сравниваются только между собой, остальное меню —
+    // отдельно. Служебные строки не подсвечиваются.
+    const KF = { good: '#e3f0dc', bad: '#f8dcd8', warn: '#fbeccc' };
+    const flagOn = section === 'kitchen' && tableMetric !== 'cost';
+    const isService = (cat) => /без категории|обслуживан|билет/i.test(cat || '');
+    const kitchenGroup = (cat) => (/бизнес/i.test(cat || '') ? 'business' : 'menu');
+    const weekFlag = (agg, avg) => {
+      if (!flagOn || avg == null || !(avg > 0)) return '';
+      const v = sortMetricVal(agg, tableMetric);
+      if (!(v >= 0)) return '';
+      const r = v / avg;
+      if (tableMetric === 'markup') return r <= 0.85 ? KF.bad : r >= 1.15 ? KF.good : '';
+      return r >= 1.5 ? KF.good : r <= 0.5 ? KF.bad : '';
+    };
+    // среднее строки по неделям, где есть данные; меньше трёх недель — не сравниваем
+    const rowAvg = (weekAggs) => {
+      const vals = weekAggs.map(a => sortMetricVal(a, tableMetric)).filter(v => v >= 0);
+      return vals.length >= 3 ? vals.reduce((x, y) => x + y, 0) / vals.length : null;
+    };
+    const cell = (agg, dim, bg) => ({
       text: metricValue(agg, tableMetric),
       color: markupColor(agg) || (dim ? '#5b5850' : ''),
+      bg: bg || 'transparent',
     });
-    const emptyCell = { text: '—', color: '' };
+    const emptyCell = { text: '—', color: '', bg: 'transparent' };
 
     const sortMetricVal = (agg, metric) => {
       if (metric === 'qty') return agg.qty;
@@ -5817,7 +5904,31 @@ class Component extends DCLogic {
     };
 
     const weekColumns = weeksSel.map(wk => ({ label: weekLabel(wk) }));
+
+    // Итог позиции против своей группы: верхние и нижние 15% по количеству,
+    // выручке и прибыли; наценка — заметно ниже медианы группы.
+    const totalFlag = new Map();
+    if (flagOn) {
+      const groups = {};
+      for (const c of catEntries) {
+        if (isService(c.name)) continue;
+        for (const it of c.items) (groups[kitchenGroup(c.name)] = groups[kitchenGroup(c.name)] || []).push(it);
+      }
+      for (const items of Object.values(groups)) {
+        const vals = items.map(it => sortMetricVal(it.total, tableMetric)).filter(v => v >= 0).sort((a, b) => a - b);
+        if (vals.length < 6) continue;
+        const q = (p) => vals[Math.min(vals.length - 1, Math.floor(p * vals.length))];
+        const lo = q(0.15), hi = q(0.85), med = q(0.5);
+        for (const it of items) {
+          const v = sortMetricVal(it.total, tableMetric);
+          if (!(v >= 0)) continue;
+          if (tableMetric === 'markup') totalFlag.set(it, v < med * 0.7 ? KF.bad : v < med * 0.85 ? KF.warn : '');
+          else totalFlag.set(it, v >= hi ? KF.good : v <= lo ? KF.bad : '');
+        }
+      }
+    }
     const categoryRows = catEntries.map(c => {
+      const catAvg = isService(c.name) ? null : rowAvg(Array.from(c.byWeek.values()));
       const expanded = searchNorm ? true : !!this.state.expanded[c.key];
       const items = c.items.slice().sort(compareItems);
       return {
@@ -5832,15 +5943,18 @@ class Component extends DCLogic {
         // клик по полю не должен сворачивать категорию
         onBaselineClick: (e) => e.stopPropagation(),
         // Нет записи за неделю — значит данных нет, а не продано на ноль
-        weekCells: weeksSel.map(wk => (c.byWeek.has(wk) ? cell(c.byWeek.get(wk)) : emptyCell)),
+        weekCells: weeksSel.map(wk => (c.byWeek.has(wk) ? cell(c.byWeek.get(wk), false, weekFlag(c.byWeek.get(wk), catAvg)) : emptyCell)),
         totalCell: cell(c.total),
-        items: items.map(it => ({
-          name: it.name,
-          baseline: showBaseline ? this.getBaseline(tableMetric, section, c.name, it.name) : '',
-          onBaselineChange: (e) => this.setBaseline(tableMetric, section, c.name, it.name, e.target.value),
-          weekCells: weeksSel.map(wk => (it.weekMap.has(wk) ? cell(it.weekMap.get(wk), true) : emptyCell)),
-          totalCell: cell(it.total),
-        })),
+        items: items.map(it => {
+          const avg = isService(c.name) ? null : rowAvg(Array.from(it.weekMap.values()));
+          return {
+            name: it.name,
+            baseline: showBaseline ? this.getBaseline(tableMetric, section, c.name, it.name) : '',
+            onBaselineChange: (e) => this.setBaseline(tableMetric, section, c.name, it.name, e.target.value),
+            weekCells: weeksSel.map(wk => (it.weekMap.has(wk) ? cell(it.weekMap.get(wk), true, weekFlag(it.weekMap.get(wk), avg)) : emptyCell)),
+            totalCell: cell(it.total, false, totalFlag.get(it)),
+          };
+        }),
       };
     });
     const grandByWeek = new Map();
@@ -5980,15 +6094,22 @@ class Component extends DCLogic {
       const k = KIND[ins.kind] || KIND.info;
       const s = SECTION_STYLE[ins.section || ''];
       const hypothesisTitle = ins.title;
-      const added = hypotheses.some(h => h.title === hypothesisTitle);
+      const linked = hypotheses.find(h => h.title === hypothesisTitle);
+      const added = !!linked;
+      const rejected = !!linked && linked.status === 'rejected';
       return {
         ...ins,
         hypothesisTitle,
+        rejected, opacity: rejected ? '0.55' : '1',
+        feedback: linked && linked.note ? `${rejected ? 'Не согласны' : 'Комментарий'}: ${linked.note}` : rejected ? 'Не согласны' : '',
+        hasFeedback: !!linked && (rejected || !!linked.note),
+        onReject: () => this.rejectInsight({ ...ins, hypothesisTitle }),
+        rejectLabel: rejected ? 'Изменить причину' : 'Не согласен',
         kindLabel: k.label, color: k.color, bg: k.bg,
         sectionLabel: s.label, sectionColor: s.color,
         impactLabel: ins.impact > 0 && ins.kind === 'problem' ? `Под угрозой ≈ ${roundRub(ins.impact)}`
           : ins.impact > 0 && ins.kind === 'opportunity' ? `Потенциал ≈ ${roundRub(ins.impact)}` : '',
-        addLabel: added ? '✓ В гипотезах' : '＋ В гипотезы',
+        addLabel: rejected ? 'Отклонён' : added ? '✓ В гипотезах' : '＋ В гипотезы',
         addBg: added ? '#eef5ef' : '#ffffff',
         addColor: added ? '#3f7a4f' : '#20201d',
         onAdd: () => this.addInsightHypothesis({ ...ins, hypothesisTitle }),
@@ -5997,7 +6118,8 @@ class Component extends DCLogic {
     const insightKind = this.state.insightKind;
     const insightCards = insights
       .filter(ins => insightKind === 'all' || ins.kind === insightKind || (insightKind === 'opportunity' && ins.kind === 'growth'))
-      .map(insightCard);
+      .map(insightCard)
+      .sort((a, b) => a.rejected - b.rejected);
     const countKind = (k) => insights.filter(ins => k === 'all' || ins.kind === k || (k === 'opportunity' && ins.kind === 'growth')).length;
     const insightKindTags = [
       { key: 'all', label: 'Все' },
@@ -6010,7 +6132,8 @@ class Component extends DCLogic {
     });
     // На дашборд — по одной главной проблеме и возможности и самое крупное из остального
     const highlights = [];
-    const pick = (fn) => { const f = insights.find(ins => fn(ins) && !highlights.includes(ins)); if (f) highlights.push(f); };
+    const rejectedTitles = new Set(hypotheses.filter(h => h.status === 'rejected').map(h => h.title));
+    const pick = (fn) => { const f = insights.find(ins => fn(ins) && !highlights.includes(ins) && !rejectedTitles.has(ins.title)); if (f) highlights.push(f); };
     pick(ins => ins.kind === 'problem');
     pick(ins => ins.kind === 'opportunity');
     pick(ins => ins.kind !== 'info');
@@ -6020,8 +6143,10 @@ class Component extends DCLogic {
       { key: 'active', label: 'В работе' },
       { key: 'yes', label: 'Подтвердилась' },
       { key: 'no', label: 'Не подтвердилась' },
+      { key: 'rejected', label: 'Не согласны' },
     ];
-    const statusColor = { active: '#20201d', yes: '#3f7a4f', no: '#b23b3b' };
+    const statusColor = { active: '#20201d', yes: '#3f7a4f', no: '#b23b3b', rejected: '#8a8579' };
+    const noteDrafts = this.state.noteDrafts || {};
     const pctChange = (a, b) => (b > 0 ? ` (${a >= b ? '+' : '−'}${Math.abs(((a - b) / b) * 100).toFixed(0)}%)` : '');
     const hypothesisRows = hypotheses.slice().reverse().map(h => {
       const before = h.startWeek ? weeksAll.filter(wk => wk < h.startWeek).slice(-4) : [];
@@ -6039,6 +6164,10 @@ class Component extends DCLogic {
         effectAfter: a ? `После (${a.n} ${pluralWeeks(a.n)}): ${describe(a)}${pctChange(a.profit, b ? b.profit : 0)}` : `После: появится с загрузкой недели с ${fmtDay(h.startWeek)}`,
         effectColor: a && b ? (a.profit >= b.profit ? '#3f7a4f' : '#b23b3b') : '#8a8579',
         onDelete: () => this.deleteHypothesis(h.id),
+        noteValue: noteDrafts[h.id] != null ? noteDrafts[h.id] : (h.note || ''),
+        noteDirty: noteDrafts[h.id] != null && noteDrafts[h.id] !== (h.note || ''),
+        onNoteChange: (e) => this.setState({ noteDrafts: { ...(this.state.noteDrafts || {}), [h.id]: e.target.value } }),
+        onNoteSave: () => this.setHypothesisNote(h.id, (noteDrafts[h.id] || '').trim()),
         statuses: STATUSES.map(st => {
           const active = (h.status || 'active') === st.key;
           return { label: st.label, onClick: () => this.setHypothesisStatus(h.id, st.key), bg: active ? statusColor[st.key] : '#eeeae1', color: active ? '#ffffff' : '#5b5850' };
@@ -6071,6 +6200,9 @@ class Component extends DCLogic {
         : this.state.hypSyncedAt ? 'Общие для всех, обновлено в ' + new Date(this.state.hypSyncedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + '.'
         : 'Загружаю общие гипотезы…',
       hypSyncColor: HYPOTHESES_API && this.state.hypSyncError ? '#b23b3b' : '#8a8579',
+      kitchenLegend: tab === 'table' && section === 'kitchen' && this.state.tableMetric !== 'cost',
+      kitchenLegendGood: this.state.tableMetric === 'markup' ? 'наценка выше обычной' : 'сильная неделя или лидер группы',
+      kitchenLegendBad: this.state.tableMetric === 'markup' ? 'наценка ниже обычной или ниже медианы группы' : 'провал недели или аутсайдер группы',
       nav: Object.fromEntries(Object.keys(PAGE_SLUGS).map((k) => [k, k === tab ? { bg: '#ffffff', color: '#20201d' } : { bg: 'transparent', color: '#5b5850' }])),
       tabIsDashboard: tab === 'dashboard', tabIsTable: tab === 'table', tabIsData: tab === 'data', tabIsInsights: tab === 'insights',
       showFilterBar: tab === 'dashboard' || tab === 'table' || tab === 'insights',
