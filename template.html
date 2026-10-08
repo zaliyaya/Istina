@@ -27,6 +27,7 @@
       <button onClick="{{ goDashboard }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
       <button onClick="{{ goTable }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
       <button onClick="{{ goInsights }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
+      <button onClick="{{ goGlass }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Посуда</button>
       <button onClick="{{ goData }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
     </nav>
 
@@ -375,6 +376,116 @@
           </sc-if>
         </div>
       </div>
+    </sc-if>
+
+    <!-- GLASS TAB -->
+    <sc-if value="{{ tabIsGlass }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ glassEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:12px;padding:24px;text-align:center;color:#8a8579;font-size:13.5px">Данных о посуде пока нет</div>
+      </sc-if>
+      <sc-if value="{{ glassHasData }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+          <sc-for list="{{ glassCards }}" as="c" hint-placeholder-count="4">
+            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:12px;padding:14px 16px">
+              <div style="font-size:11.5px;font-weight:700;color:#8a8579;text-transform:uppercase;letter-spacing:0.04em">{{ c.label }}</div>
+              <div style="font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:600;margin:4px 0 2px">{{ c.value }}</div>
+              <div style="font-size:12.5px;color:#5b5850;line-height:1.4">{{ c.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start;margin-bottom:16px">
+          <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden">
+            <div style="padding:14px 16px 4px;font-size:14.5px;font-weight:600;color:#5b5850">Сколько посуды сейчас</div>
+            <div style="padding:0 16px 10px;font-size:12px;color:#8a8579;line-height:1.45">{{ glassCountNote }}</div>
+            <div style="display:grid;grid-template-columns:1fr 64px 56px 56px 64px;padding:8px 16px;background:#f2efe8;font-size:11.5px;font-weight:700;color:#5b5850;text-transform:uppercase;letter-spacing:0.02em">
+              <div>Позиция</div><div style="text-align:right">Подсчёт</div><div style="text-align:right">Приход</div><div style="text-align:right">Бой</div><div style="text-align:right">Сейчас</div>
+            </div>
+            <sc-for list="{{ glassStockGroups }}" as="g" hint-placeholder-count="2">
+              <div>
+                <div style="padding:8px 16px 4px;font-size:11.5px;font-weight:700;color:#8a8579;text-transform:uppercase;letter-spacing:0.04em;border-top:1px solid rgba(32,32,29,0.07)">{{ g.title }}</div>
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="8">
+                  <div style="display:grid;grid-template-columns:1fr 64px 56px 56px 64px;padding:6px 16px;font-size:13px;align-items:center">
+                    <div>{{ r.name }}</div>
+                    <div style="text-align:right;color:#8a8579">{{ r.base }}</div>
+                    <div style="text-align:right;color:#4f7d4a">{{ r.recv }}</div>
+                    <div style="text-align:right;color:{{ r.brokenColor }}">{{ r.broken }}</div>
+                    <div style="text-align:right"><span style="font-weight:700;color:{{ r.leftColor }};background:{{ r.leftBg }};padding:2px 8px;border-radius:6px">{{ r.left }}</span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+              <div style="font-size:14.5px;font-weight:600;color:#5b5850">Бой за период: {{ glassPeriodTotal }}</div>
+              <div style="display:flex;gap:4px;background:#eeeae1;border-radius:8px;padding:3px">
+                <sc-for list="{{ glassPeriodTags }}" as="p" hint-placeholder-count="4">
+                  <button onClick="{{ p.onClick }}" style="border:none;font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;background:{{ p.bg }};color:{{ p.color }}">{{ p.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:700;margin-bottom:10px">Причины</div>
+              <sc-if value="{{ glassNoPeriodData }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:13px;color:#8a8579">За этот период боя нет</div>
+              </sc-if>
+              <sc-for list="{{ glassReasonBars }}" as="b" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;margin-bottom:7px;font-size:13px">
+                  <div>{{ b.label }}</div>
+                  <div style="background:#f2efe8;border-radius:4px;height:12px"><div style="width:{{ b.width }};height:12px;border-radius:4px;background:{{ b.color }}"></div></div>
+                  <div style="text-align:right;font-weight:600">{{ b.n }} <span style="color:#8a8579;font-weight:400">· {{ b.pct }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px">
+              <div style="font-size:13px;font-weight:700;margin-bottom:10px">Что бьётся чаще</div>
+              <sc-for list="{{ glassItemBars }}" as="b" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;margin-bottom:7px;font-size:13px">
+                  <div>{{ b.label }}</div>
+                  <div style="background:#f2efe8;border-radius:4px;height:12px"><div style="width:{{ b.width }};height:12px;border-radius:4px;background:{{ b.color }}"></div></div>
+                  <div style="text-align:right;font-weight:600">{{ b.n }} <span style="color:#8a8579;font-weight:400">· {{ b.pct }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:14.5px;font-weight:600;color:#5b5850;margin-bottom:12px">Бой по месяцам</div>
+          <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;height:150px">
+            <sc-for list="{{ glassMonthBars }}" as="m" hint-placeholder-count="12">
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:150px">
+                <div style="font-size:12px;font-weight:600;margin-bottom:3px">{{ m.n }}</div>
+                <div style="width:100%;max-width:38px;height:{{ m.h }};background:#c9a96e;border-radius:4px 4px 0 0"></div>
+                <div style="font-size:11.5px;color:#8a8579;margin-top:5px">{{ m.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 16px 8px">
+            <div style="font-size:14.5px;font-weight:600;color:#5b5850">Журнал боя</div>
+            <div style="font-size:12px;color:#8a8579">{{ glassUpdated }}</div>
+          </div>
+          <sc-if value="{{ glassHasUnknown }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:0 16px 8px;background:#fdf6e6;border:1px solid #e8d9b0;border-radius:8px;padding:8px 12px;font-size:12.5px;color:#6b5b34">{{ glassUnknownNote }}</div>
+          </sc-if>
+          <div style="overflow-x:auto">
+            <sc-for list="{{ glassLog }}" as="e" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:70px 120px 190px 150px minmax(200px,1fr);gap:10px;padding:8px 16px;border-top:1px solid rgba(32,32,29,0.07);font-size:13px;align-items:baseline;min-width:760px;opacity:{{ e.opacity }}">
+                <div style="color:#8a8579">{{ e.date }}</div>
+                <div>{{ e.who }}</div>
+                <div style="font-weight:600">{{ e.what }}</div>
+                <div style="color:{{ e.reasonColor }};font-weight:600">{{ e.reason }}</div>
+                <div style="color:#5b5850">{{ e.text }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
     </sc-if>
 
     <!-- TABLE TAB -->

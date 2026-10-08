@@ -1,0 +1,48 @@
+name: Бот учёта посуды
+
+# Каждые 10 минут забирает новые сообщения бота из рабочего чата,
+# обновляет glass/data.json и вкладку «Посуда» в index.html и, если что-то
+# изменилось, публикует сайт. Токен бота: секрет TELEGRAM_BOT_TOKEN.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: glass-bot
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Забрать сообщения
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          GLASS_CHAT_ID: ${{ vars.GLASS_CHAT_ID }}
+        run: python glass/bot.py poll
+
+      - name: Сохранить и опубликовать
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then echo "без изменений"; exit 0; fi
+          git config user.name "istina-glass-bot"
+          git config user.email "glass-bot@users.noreply.github.com"
+          git add glass/data.json index.html
+          git commit -m "glass: сообщения из чата"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          # пуш от github.token сам не запускает деплой, поэтому вызываем его явно
+          gh workflow run deploy-pages.yml --ref main
+
+      - name: Подтвердить сообщения
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: python glass/bot.py ack
