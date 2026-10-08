@@ -3012,7 +3012,7 @@ window.__resources = {}
 
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;flex:1 1 260px;min-width:0">
           <div style="font-size:14.5px;font-weight:600;color:#5b5850;margin-bottom:4px">Гипотезы</div>
-          <div style="font-size:11.5px;color:#8a8579;margin-bottom:8px;line-height:1.4">Эффект до и после старта считается сам.</div>
+          <div style="font-size:11.5px;color:#8a8579;margin-bottom:8px;line-height:1.4">Эффект до и после старта считается сам. <span style="color:{{ hypSyncColor }}">{{ hypSyncLabel }}</span></div>
           <div style="display:flex;gap:6px;margin-bottom:10px">
             <input type="text" value="{{ hypothesisDraft }}" onChange="{{ onHypothesisDraftChange }}" placeholder="Своя гипотеза…" style="flex:1;min-width:0;font:inherit;font-size:12.5px;padding:5px 8px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
             <button onClick="{{ onAddOwnHypothesis }}" title="Добавить" style="font:inherit;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;background:#20201d;color:#f7f5f0;cursor:pointer">＋</button>
@@ -3702,7 +3702,7 @@ window.__resources = {}
 
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto;flex:1 1 260px;min-width:0">
           <div style="font-size:14.5px;font-weight:600;color:#5b5850;margin-bottom:4px">Гипотезы</div>
-          <div style="font-size:11.5px;color:#8a8579;margin-bottom:8px;line-height:1.4">Эффект до и после старта считается сам.</div>
+          <div style="font-size:11.5px;color:#8a8579;margin-bottom:8px;line-height:1.4">Эффект до и после старта считается сам. <span style="color:{{ hypSyncColor }}">{{ hypSyncLabel }}</span></div>
           <div style="display:flex;gap:6px;margin-bottom:10px">
             <input type="text" value="{{ hypothesisDraft }}" onChange="{{ onHypothesisDraftChange }}" placeholder="Своя гипотеза…" style="flex:1;min-width:0;font:inherit;font-size:12.5px;padding:5px 8px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
             <button onClick="{{ onAddOwnHypothesis }}" title="Добавить" style="font:inherit;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;background:#20201d;color:#f7f5f0;cursor:pointer">＋</button>
@@ -4794,6 +4794,21 @@ function glassView(period) {
   };
 }
 
+// Общие гипотезы: Google-таблица «Гипотезы || Истина» через веб-приложение
+// Apps Script (код — sync/hypotheses.gs). Пустой адрес — гипотезы живут только
+// в браузере, как раньше.
+const HYPOTHESES_API = '';
+function hypRequest(body) {
+  const req = body
+    // text/plain — без предварительного CORS-запроса, который Apps Script не понимает
+    ? fetch(HYPOTHESES_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+    : fetch(HYPOTHESES_API, { cache: 'no-store' });
+  return req.then(r => r.json()).then(d => {
+    if (!d || !d.ok) throw new Error((d && d.error) || 'нет ответа');
+    return d.hypotheses || [];
+  });
+}
+
 // Разделы отчёта — отдельные страницы сайта: /categories/, /insights/,
 // /posuda/, /data/; дашборд — главная. Деплой кладёт копию index.html в
 // каждую папку, а страница по адресу понимает, какой раздел открыть.
@@ -5307,6 +5322,7 @@ class Component extends DCLogic {
     }]);
     this.persist(db);
     this.setState({ db });
+    this.pushHypotheses({ action: 'upsert', hypotheses: db.hypotheses.slice(-1) });
   };
   addInsightHypothesis = (ins) => {
     const db = this.state.db;
@@ -5325,6 +5341,7 @@ class Component extends DCLogic {
     db.hypotheses = (db.hypotheses || []).map(h => (h.id === id ? { ...h, status } : h));
     this.persist(db);
     this.setState({ db });
+    this.pushHypotheses({ action: 'upsert', hypotheses: db.hypotheses.filter(h => h.id === id) });
   };
   deleteHypothesis = (id) => {
     if (!window.confirm('Удалить гипотезу?')) return;
@@ -5332,6 +5349,7 @@ class Component extends DCLogic {
     db.hypotheses = (db.hypotheses || []).filter(h => h.id !== id);
     this.persist(db);
     this.setState({ db });
+    this.pushHypotheses({ action: 'delete', id });
   };
   setInsightKind = (kind) => this.setState({ insightKind: kind });
   goInsights = () => this.openPage('insights');
@@ -5353,10 +5371,46 @@ class Component extends DCLogic {
     document.title = 'Истина · ' + PAGE_TITLES[this.state.tab];
     this.onPopState = () => this.openPage(pageFromPath().tab, false);
     window.addEventListener('popstate', this.onPopState);
+    if (HYPOTHESES_API) {
+      this.syncHypotheses();
+      this.hypTimer = setInterval(() => this.syncHypotheses(), 60000);
+      this.onFocus = () => this.syncHypotheses();
+      window.addEventListener('focus', this.onFocus);
+    }
   }
 
   componentWillUnmount() {
     window.removeEventListener('popstate', this.onPopState);
+    if (this.hypTimer) clearInterval(this.hypTimer);
+    if (this.onFocus) window.removeEventListener('focus', this.onFocus);
+  }
+
+  // Таблица — главный источник. Гипотезы, заведённые в браузере до
+  // подключения таблицы, один раз отправляются туда, дальше браузер только
+  // повторяет таблицу.
+  syncHypotheses() {
+    const db = this.state.db;
+    const first = !db.hypothesesShared;
+    hypRequest(null).then((remote) => {
+      const ids = new Set(remote.map(h => h.id));
+      const mine = first ? (db.hypotheses || []).filter(h => !ids.has(h.id)) : [];
+      return mine.length ? hypRequest({ action: 'upsert', hypotheses: mine }) : remote;
+    }).then((list) => this.applyHypotheses(list))
+      .catch(() => this.setState({ hypSyncError: true }));
+  }
+
+  applyHypotheses(list) {
+    const db = this.state.db;
+    db.hypotheses = list;
+    db.hypothesesShared = true;
+    this.persist(db);
+    this.setState({ db, hypSyncError: false, hypSyncedAt: Date.now() });
+  }
+
+  pushHypotheses(body) {
+    if (!HYPOTHESES_API) return;
+    hypRequest(body).then((list) => this.applyHypotheses(list))
+      .catch(() => this.setState({ hypSyncError: true }));
   }
 
   // Средние продажи и прибыль в неделю: по позиции или по разделу целиком
@@ -6012,6 +6066,11 @@ class Component extends DCLogic {
       gapsLabel: gaps.length ? `Неполные недели в срезе: ${gaps.join('; ')}. Считаются по тому, что есть, а не нулём.` : '',
       hasGaps: gaps.length > 0,
       weeksCountLabel: weeksAll.length ? `${weeksAll.length} ${pluralWeeks(weeksAll.length)} в базе` : 'Нет данных',
+      hypSyncLabel: !HYPOTHESES_API ? 'Видны только в этом браузере.'
+        : this.state.hypSyncError ? 'Нет связи с общей таблицей — изменения пока только здесь.'
+        : this.state.hypSyncedAt ? 'Общие для всех, обновлено в ' + new Date(this.state.hypSyncedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + '.'
+        : 'Загружаю общие гипотезы…',
+      hypSyncColor: HYPOTHESES_API && this.state.hypSyncError ? '#b23b3b' : '#8a8579',
       nav: Object.fromEntries(Object.keys(PAGE_SLUGS).map((k) => [k, k === tab ? { bg: '#ffffff', color: '#20201d' } : { bg: 'transparent', color: '#5b5850' }])),
       tabIsDashboard: tab === 'dashboard', tabIsTable: tab === 'table', tabIsData: tab === 'data', tabIsInsights: tab === 'insights',
       showFilterBar: tab === 'dashboard' || tab === 'table' || tab === 'insights',
