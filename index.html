@@ -4706,10 +4706,18 @@ const PAGE_SLUGS = { dashboard: '', table: 'categories', insights: 'insights', g
 const PAGE_TITLES = { dashboard: 'Дашборд', table: 'Категории', insights: 'Инсайты', glass: 'Посуда', data: 'Данные' };
 
 function pageFromPath() {
+  // Заглушки в папках разделов перекидывают на главную с ?page=раздел
+  const asked = new URLSearchParams(location.search).get('page');
   const parts = location.pathname.split('/').filter(Boolean);
   if (parts.length && /\.html?$/.test(parts[parts.length - 1])) parts.pop();
   const last = parts[parts.length - 1] || '';
-  for (const [tab, slug] of Object.entries(PAGE_SLUGS)) if (slug && slug === last) return { tab, base: parts.slice(0, -1) };
+  for (const [tab, slug] of Object.entries(PAGE_SLUGS)) {
+    if (slug && slug === last) return { tab, base: parts.slice(0, -1) };
+    if (slug && slug === asked) {
+      history.replaceState(null, '', '/' + [...parts, slug].join('/') + '/' + location.hash);
+      return { tab, base: parts };
+    }
+  }
   return { tab: 'dashboard', base: parts };
 }
 
