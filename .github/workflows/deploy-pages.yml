@@ -29,10 +29,23 @@ jobs:
         with:
           enablement: true
 
+      # Каждый раздел отчёта — своя страница: копия index.html в папке
+      # раздела. Какой раздел показать, страница решает по адресу, поэтому
+      # в репозитории по-прежнему один index.html (его правят бот посуды и
+      # еженедельное обновление).
+      - name: Собрать страницы разделов
+        run: |
+          mkdir _site
+          git ls-files -z | grep -zv '^\.github/' | xargs -0 cp --parents -t _site
+          for page in categories insights posuda data; do
+            mkdir -p "_site/$page"
+            cp index.html "_site/$page/index.html"
+          done
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
