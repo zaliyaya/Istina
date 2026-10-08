@@ -2694,11 +2694,11 @@ window.__resources = {}
     </header>
 
     <nav style="display:flex;gap:6px;margin-bottom:20px;background:#eeeae1;border-radius:10px;padding:4px;width:fit-content">
-      <button onClick="{{ goDashboard }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
-      <button onClick="{{ goTable }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
-      <button onClick="{{ goInsights }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
-      <button onClick="{{ goGlass }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Посуда</button>
-      <button onClick="{{ goData }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
+      <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }}" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
+      <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }}" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
+      <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }}" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
+      <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }}" style-hover="background:rgba(32,32,29,0.05)">Посуда</button>
+      <button onClick="{{ goData }}" style="border:none;background:{{ nav.data.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.data.color }}" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
     </nav>
 
     <!-- active tab pill overlay via computed styles -->
@@ -3362,11 +3362,11 @@ window.__resources = {}
     </header>
 
     <nav style="display:flex;gap:6px;margin-bottom:20px;background:#eeeae1;border-radius:10px;padding:4px;width:fit-content">
-      <button onClick="{{ goDashboard }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
-      <button onClick="{{ goTable }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
-      <button onClick="{{ goInsights }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
-      <button onClick="{{ goGlass }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Посуда</button>
-      <button onClick="{{ goData }}" style="border:none;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:#5b5850" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
+      <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }}" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
+      <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }}" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
+      <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }}" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
+      <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }}" style-hover="background:rgba(32,32,29,0.05)">Посуда</button>
+      <button onClick="{{ goData }}" style="border:none;background:{{ nav.data.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.data.color }}" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
     </nav>
 
     <!-- active tab pill overlay via computed styles -->
@@ -4699,14 +4699,29 @@ function glassView(period) {
   };
 }
 
+// Разделы отчёта — отдельные страницы сайта: /categories/, /insights/,
+// /posuda/, /data/; дашборд — главная. Деплой кладёт копию index.html в
+// каждую папку, а страница по адресу понимает, какой раздел открыть.
+const PAGE_SLUGS = { dashboard: '', table: 'categories', insights: 'insights', glass: 'posuda', data: 'data' };
+const PAGE_TITLES = { dashboard: 'Дашборд', table: 'Категории', insights: 'Инсайты', glass: 'Посуда', data: 'Данные' };
+
+function pageFromPath() {
+  const parts = location.pathname.split('/').filter(Boolean);
+  if (parts.length && /\.html?$/.test(parts[parts.length - 1])) parts.pop();
+  const last = parts[parts.length - 1] || '';
+  for (const [tab, slug] of Object.entries(PAGE_SLUGS)) if (slug && slug === last) return { tab, base: parts.slice(0, -1) };
+  return { tab: 'dashboard', base: parts };
+}
+
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.fileInputRef = React.createRef();
     this.importInputRef = React.createRef();
+    this.page = pageFromPath();
     this.state = {
-      tab: 'dashboard',
-      section: 'all',
+      tab: this.page.tab,
+      section: this.page.tab === 'table' ? 'kitchen' : 'all',
       period: (props.defaultPeriod || 'last8'),
       category: '',
       categoryFilter: [],
@@ -5216,8 +5231,30 @@ class Component extends DCLogic {
     this.setState({ db });
   };
   setInsightKind = (kind) => this.setState({ insightKind: kind });
-  goInsights = () => this.setState({ tab: 'insights' });
-  goGlass = () => this.setState({ tab: 'glass' });
+  goInsights = () => this.openPage('insights');
+  goGlass = () => this.openPage('glass');
+
+  // Переход между разделами без перезагрузки: меняем адрес и вкладку.
+  // На file:// (скачанный отчёт) адрес не трогаем — там одна страница.
+  openPage(tab, push = true) {
+    if (push && location.protocol.startsWith('http')) {
+      const slug = PAGE_SLUGS[tab];
+      const path = '/' + [...this.page.base, slug].filter(Boolean).join('/') + '/';
+      if (path !== location.pathname) history.pushState({ tab }, '', path + location.search);
+    }
+    document.title = 'Истина · ' + PAGE_TITLES[tab];
+    this.setState((s) => ({ tab, section: tab === 'table' && s.section === 'all' ? 'kitchen' : s.section }));
+  }
+
+  componentDidMount() {
+    document.title = 'Истина · ' + PAGE_TITLES[this.state.tab];
+    this.onPopState = () => this.openPage(pageFromPath().tab, false);
+    window.addEventListener('popstate', this.onPopState);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('popstate', this.onPopState);
+  }
 
   // Средние продажи и прибыль в неделю: по позиции или по разделу целиком
   hypothesisWeekly(db, h, weeks) {
@@ -5267,9 +5304,9 @@ class Component extends DCLogic {
     return total;
   }
 
-  goDashboard = () => this.setState({ tab: 'dashboard' });
-  goTable = () => this.setState((s) => ({ tab: 'table', section: s.section === 'all' ? 'kitchen' : s.section }));
-  goData = () => this.setState({ tab: 'data' });
+  goDashboard = () => this.openPage('dashboard');
+  goTable = () => this.openPage('table');
+  goData = () => this.openPage('data');
   setTableMetric = (key) => this.setState({ tableMetric: key });
   setTrendTotal = () => this.setState({ trendScope: 'total' });
   setTrendKitchen = () => this.setState({ trendScope: 'kitchen' });
@@ -5872,6 +5909,7 @@ class Component extends DCLogic {
       gapsLabel: gaps.length ? `Неполные недели в срезе: ${gaps.join('; ')}. Считаются по тому, что есть, а не нулём.` : '',
       hasGaps: gaps.length > 0,
       weeksCountLabel: weeksAll.length ? `${weeksAll.length} ${pluralWeeks(weeksAll.length)} в базе` : 'Нет данных',
+      nav: Object.fromEntries(Object.keys(PAGE_SLUGS).map((k) => [k, k === tab ? { bg: '#ffffff', color: '#20201d' } : { bg: 'transparent', color: '#5b5850' }])),
       tabIsDashboard: tab === 'dashboard', tabIsTable: tab === 'table', tabIsData: tab === 'data', tabIsInsights: tab === 'insights',
       showFilterBar: tab === 'dashboard' || tab === 'table' || tab === 'insights',
       sectionAllAvailable: tab === 'dashboard' || tab === 'insights',
