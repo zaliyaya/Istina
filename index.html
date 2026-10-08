@@ -2685,21 +2685,20 @@ window.__resources = {}
 
   <div style="max-width:1240px;margin:0 auto">
 
-    <header style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap">
-      <div>
-        <div style="font-family:'Newsreader',Georgia,serif;font-size:28px;font-weight:600;letter-spacing:-0.01em">Истина · Анализ продаж</div>
-        <div style="font-size:13px;color:#5b5850;margin-top:2px">Еженедельная статистика по бару и кухне</div>
+    <header style="display:flex;align-items:center;gap:12px 24px;margin-bottom:22px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid rgba(32,32,29,0.10)">
+      <div style="margin-right:auto">
+        <div style="font-family:'Newsreader',Georgia,serif;font-size:26px;font-weight:600;letter-spacing:-0.01em;line-height:1.1">Истина</div>
+        <div style="font-size:12.5px;color:#5b5850;margin-top:2px">Статистика бара и кухни</div>
       </div>
+      <nav style="display:flex;gap:4px;background:#eeeae1;border-radius:10px;padding:4px;overflow-x:auto;max-width:100%">
+        <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Дашборд</button>
+        <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Категории</button>
+        <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Инсайты</button>
+        <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Посуда</button>
+        <button onClick="{{ goData }}" style="border:none;background:{{ nav.data.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.data.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Данные</button>
+      </nav>
       <div style="font-size:12px;color:#8a8579;background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:8px;padding:6px 12px;white-space:nowrap">{{ weeksCountLabel }}</div>
     </header>
-
-    <nav style="display:flex;gap:6px;margin-bottom:20px;background:#eeeae1;border-radius:10px;padding:4px;width:fit-content">
-      <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }}" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
-      <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }}" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
-      <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }}" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
-      <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }}" style-hover="background:rgba(32,32,29,0.05)">Посуда</button>
-      <button onClick="{{ goData }}" style="border:none;background:{{ nav.data.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.data.color }}" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
-    </nav>
 
     <!-- active tab pill overlay via computed styles -->
     <sc-if value="{{ tabIsDashboard }}"><div></div></sc-if>
@@ -3120,6 +3119,29 @@ window.__resources = {}
               </sc-for>
             </div>
           </div>
+        </div>
+
+        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden;margin-bottom:16px">
+          <div style="padding:14px 16px 4px;font-size:14.5px;font-weight:600;color:#5b5850">Кто бьёт: сотрудники за последние 30 дней</div>
+          <div style="padding:0 16px 8px;font-size:12.5px;color:#8a8579">Виновник — по тексту сообщения: «разбил(а)» — автор, на мойке — техперсонал, названный коллега — он.</div>
+          <sc-if value="{{ glassNoStaff }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:8px 16px 12px;font-size:13px;color:#8a8579">За 30 дней сотрудники бара ничего не разбили</div>
+          </sc-if>
+          <div style="overflow-x:auto">
+            <sc-for list="{{ glassStaffRating }}" as="r" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:28px 130px minmax(120px,1fr) 40px minmax(160px,1.2fr) 70px;gap:10px;padding:8px 16px;border-top:1px solid rgba(32,32,29,0.07);font-size:13px;align-items:center;min-width:640px">
+                <div style="color:#8a8579;font-weight:600">{{ r.place }}</div>
+                <div style="font-weight:600">{{ r.name }}</div>
+                <div style="height:12px;background:#f2efe8;border-radius:4px"><div style="width:{{ r.width }};height:12px;border-radius:4px;background:#b23b3b"></div></div>
+                <div style="text-align:right;font-weight:700">{{ r.total }}</div>
+                <div style="color:#5b5850">{{ r.what }}</div>
+                <div style="text-align:right;color:#8a8579">{{ r.last }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ glassHasStaffOthers }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:10px 16px 14px;border-top:1px solid rgba(32,32,29,0.07);font-size:12.5px;color:#5b5850">Не сотрудники бара или виновник не назван: {{ glassStaffOthers }}</div>
+          </sc-if>
         </div>
 
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;margin-bottom:16px">
@@ -3353,21 +3375,20 @@ window.__resources = {}
 
   <div style="max-width:1240px;margin:0 auto">
 
-    <header style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap">
-      <div>
-        <div style="font-family:'Newsreader',Georgia,serif;font-size:28px;font-weight:600;letter-spacing:-0.01em">Истина · Анализ продаж</div>
-        <div style="font-size:13px;color:#5b5850;margin-top:2px">Еженедельная статистика по бару и кухне</div>
+    <header style="display:flex;align-items:center;gap:12px 24px;margin-bottom:22px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid rgba(32,32,29,0.10)">
+      <div style="margin-right:auto">
+        <div style="font-family:'Newsreader',Georgia,serif;font-size:26px;font-weight:600;letter-spacing:-0.01em;line-height:1.1">Истина</div>
+        <div style="font-size:12.5px;color:#5b5850;margin-top:2px">Статистика бара и кухни</div>
       </div>
+      <nav style="display:flex;gap:4px;background:#eeeae1;border-radius:10px;padding:4px;overflow-x:auto;max-width:100%">
+        <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Дашборд</button>
+        <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Категории</button>
+        <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Инсайты</button>
+        <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Посуда</button>
+        <button onClick="{{ goData }}" style="border:none;background:{{ nav.data.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.data.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Данные</button>
+      </nav>
       <div style="font-size:12px;color:#8a8579;background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:8px;padding:6px 12px;white-space:nowrap">{{ weeksCountLabel }}</div>
     </header>
-
-    <nav style="display:flex;gap:6px;margin-bottom:20px;background:#eeeae1;border-radius:10px;padding:4px;width:fit-content">
-      <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }}" style-hover="background:rgba(32,32,29,0.05)">Дашборд</button>
-      <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }}" style-hover="background:rgba(32,32,29,0.05)">Категории</button>
-      <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }}" style-hover="background:rgba(32,32,29,0.05)">Инсайты</button>
-      <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }}" style-hover="background:rgba(32,32,29,0.05)">Посуда</button>
-      <button onClick="{{ goData }}" style="border:none;background:{{ nav.data.bg }};font:inherit;font-size:14px;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;color:{{ nav.data.color }}" style-hover="background:rgba(32,32,29,0.05)">Данные</button>
-    </nav>
 
     <!-- active tab pill overlay via computed styles -->
     <sc-if value="{{ tabIsDashboard }}"><div></div></sc-if>
@@ -3788,6 +3809,29 @@ window.__resources = {}
               </sc-for>
             </div>
           </div>
+        </div>
+
+        <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden;margin-bottom:16px">
+          <div style="padding:14px 16px 4px;font-size:14.5px;font-weight:600;color:#5b5850">Кто бьёт: сотрудники за последние 30 дней</div>
+          <div style="padding:0 16px 8px;font-size:12.5px;color:#8a8579">Виновник — по тексту сообщения: «разбил(а)» — автор, на мойке — техперсонал, названный коллега — он.</div>
+          <sc-if value="{{ glassNoStaff }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:8px 16px 12px;font-size:13px;color:#8a8579">За 30 дней сотрудники бара ничего не разбили</div>
+          </sc-if>
+          <div style="overflow-x:auto">
+            <sc-for list="{{ glassStaffRating }}" as="r" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:28px 130px minmax(120px,1fr) 40px minmax(160px,1.2fr) 70px;gap:10px;padding:8px 16px;border-top:1px solid rgba(32,32,29,0.07);font-size:13px;align-items:center;min-width:640px">
+                <div style="color:#8a8579;font-weight:600">{{ r.place }}</div>
+                <div style="font-weight:600">{{ r.name }}</div>
+                <div style="height:12px;background:#f2efe8;border-radius:4px"><div style="width:{{ r.width }};height:12px;border-radius:4px;background:#b23b3b"></div></div>
+                <div style="text-align:right;font-weight:700">{{ r.total }}</div>
+                <div style="color:#5b5850">{{ r.what }}</div>
+                <div style="text-align:right;color:#8a8579">{{ r.last }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ glassHasStaffOthers }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:10px 16px 14px;border-top:1px solid rgba(32,32,29,0.07);font-size:12.5px;color:#5b5850">Не сотрудники бара или виновник не назван: {{ glassStaffOthers }}</div>
+          </sc-if>
         </div>
 
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;margin-bottom:16px">
@@ -4583,6 +4627,33 @@ function glassBars(counter, colorOf) {
   }));
 }
 
+// Кто разбил — только по тексту сообщения. «Разбил(а)» без имени — автор
+// сообщения; бой на мойке — техперсонал; гости, стажёры и названный коллега —
+// они. Если из текста не понять, бой ни на кого не записывается.
+// Имена из Telegram приводятся к коротким: «Булат офик Истина» → «Булат».
+const GLASS_NAME_ALIASES = {};
+function glassStaffName(who) {
+  const raw = (who || '').trim();
+  if (GLASS_NAME_ALIASES[raw]) return GLASS_NAME_ALIASES[raw];
+  const short = raw.replace(/\s*(истина|офик)\s*/gi, ' ').replace(/\s+/g, ' ').trim() || raw;
+  return short.charAt(0).toUpperCase() + short.slice(1);
+}
+function glassCulprit(e, it) {
+  const text = e.text || '';
+  const t = text.toLowerCase();
+  if (it.reason === 'Гости') return { group: 'Гости' };
+  if (/барбек/.test(t)) return { staff: 'Барбек' };
+  if (it.reason === 'Техперсонал' || /мойк|раковин/.test(t)) return { group: 'Техперсонал' };
+  if (/стаж[её]р/.test(t)) return { group: 'Стажёры' };
+  // «разбила Динара», «Даша разбила»
+  const named = text.match(/(?:разбил|уронил)[аи]?\s+([А-ЯЁ][а-яё]+)/) ||
+    text.match(/([А-ЯЁ][а-яё]+)\s+(?:разбил|уронил)[аи]?(?![а-яё])/);
+  if (named && named[1] !== 'Бой') return { staff: glassStaffName(named[1]) };
+  if (/(^|[^а-яё])(я\s+разбил|разбил|разбила|уронил|уронила)(?![а-яё])/.test(t)) return { staff: glassStaffName(e.who) };
+  return { group: 'Не указано, кто' };
+}
+const GLASS_RATING_DAYS = 30;
+
 function glassView(period) {
   const d = glassData();
   if (!d) return { glassEmpty: true };
@@ -4642,6 +4713,29 @@ function glassView(period) {
     }
   }
 
+  // Рейтинг сотрудников — всегда за последние 30 дней
+  const byStaff = {}, byGroup = {};
+  for (const e of events) {
+    if (new Date(e.date).getTime() < now - GLASS_RATING_DAYS * 86400000) continue;
+    for (const it of e.items) {
+      const c = glassCulprit(e, it);
+      if (c.group) { byGroup[c.group] = (byGroup[c.group] || 0) + it.qty; continue; }
+      const st = byStaff[c.staff] || (byStaff[c.staff] = { n: 0, last: e.date, what: [] });
+      st.n += it.qty;
+      st.last = e.date;
+      st.what.push(it.item.toLowerCase() + (it.qty > 1 ? ' ×' + it.qty : ''));
+    }
+  }
+  const staffRows = Object.entries(byStaff).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.n - a.n);
+  const maxStaff = staffRows.length ? staffRows[0].n : 1;
+  const glassStaffRating = staffRows.map((r, i) => ({
+    place: String(i + 1), name: r.name, total: String(r.n),
+    width: Math.max(3, Math.round(r.n / maxStaff * 100)) + '%',
+    what: r.what.join(', '), last: glassDate(r.last, true),
+  }));
+  const glassStaffOthers = Object.entries(byGroup).sort((a, b) => b[1] - a[1])
+    .map(([g, n]) => `${g} — ${n}`).join(' · ');
+
   // По месяцам: последние 12 месяцев
   const monthKey = (iso) => new Date(iso).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', timeZone: GLASS_TZ }).slice(0, 7);
   const months = [];
@@ -4689,6 +4783,7 @@ function glassView(period) {
     glassCountNote: `Подсчёт от ${glassDate(count.date, true)}, дальше вычитается бой из чата и прибавляется приход. Жёлтым — осталось 2 и меньше.`,
     glassReasonBars: glassBars(byReason, (l) => GLASS_REASON_COLORS[l] || '#a39e92'),
     glassItemBars: glassBars(byItem, () => '#8a7a52').slice(0, 10),
+    glassStaffRating, glassStaffOthers, glassHasStaffOthers: !!glassStaffOthers, glassNoStaff: !staffRows.length,
     glassPeriodTotal: `${periodTotal} ${glassPlural(periodTotal)}`,
     glassNoPeriodData: periodTotal === 0,
     glassMonthBars: months.map(m => ({ label: m.label, n: m.n ? String(m.n) : '', h: Math.round(m.n / maxM * 110) + 'px' })),
@@ -5905,7 +6000,7 @@ class Component extends DCLogic {
     }));
 
     return {
-      glassCards: [], glassStockGroups: [], glassReasonBars: [], glassItemBars: [], glassMonthBars: [], glassLog: [],
+      glassCards: [], glassStockGroups: [], glassReasonBars: [], glassItemBars: [], glassStaffRating: [], glassMonthBars: [], glassLog: [],
       ...glass, glassHasData: !glass.glassEmpty, glassPeriodTags,
       tabIsGlass: tab === 'glass', goGlass: this.goGlass,
       groupOptions,
