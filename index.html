@@ -3122,31 +3122,28 @@ window.__resources = {}
         </div>
 
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden;margin-bottom:16px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 16px 4px">
-            <div style="font-size:14.5px;font-weight:600;color:#5b5850">Кто бьёт: рейтинг сотрудников за период</div>
-            <div style="display:flex;gap:14px;font-size:12px;color:#8a8579">
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#b23b3b;margin-right:5px"></span>написал, что разбил сам</span>
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#e3b8b0;margin-right:5px"></span>сообщил, кто разбил — не сказано</span>
-            </div>
-          </div>
-          <div style="padding:0 16px 8px;font-size:12.5px;color:#8a8579">Бой гостей, техперсонала, барбека и стажёров сюда не входит.</div>
+          <div style="padding:14px 16px 4px;font-size:14.5px;font-weight:600;color:#5b5850">Кто бьёт: сотрудники за последние 30 дней</div>
+          <div style="padding:0 16px 8px;font-size:12.5px;color:#8a8579">Виновник — по тексту сообщения: «разбил(а)» — автор, на мойке — техперсонал, названный коллега — он.</div>
+          <sc-if value="{{ glassNoStaff }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:8px 16px 12px;font-size:13px;color:#8a8579">За 30 дней сотрудники бара ничего не разбили</div>
+          </sc-if>
           <div style="overflow-x:auto">
-            <sc-for list="{{ glassStaffRating }}" as="r" hint-placeholder-count="6">
-              <div style="display:grid;grid-template-columns:28px 150px minmax(160px,1fr) 44px 60px 60px 70px;gap:10px;padding:8px 16px;border-top:1px solid rgba(32,32,29,0.07);font-size:13px;align-items:center;min-width:640px">
+            <sc-for list="{{ glassStaffRating }}" as="r" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:28px 130px minmax(120px,1fr) 40px minmax(160px,1.2fr) 70px;gap:10px;padding:8px 16px;border-top:1px solid rgba(32,32,29,0.07);font-size:13px;align-items:center;min-width:640px">
                 <div style="color:#8a8579;font-weight:600">{{ r.place }}</div>
                 <div style="font-weight:600">{{ r.name }}</div>
-                <div style="display:flex;height:12px;background:#f2efe8;border-radius:4px;overflow:hidden"><div style="width:{{ r.sureWidth }};background:#b23b3b"></div><div style="width:{{ r.unsureWidth }};background:#e3b8b0"></div></div>
+                <div style="height:12px;background:#f2efe8;border-radius:4px"><div style="width:{{ r.width }};height:12px;border-radius:4px;background:#b23b3b"></div></div>
                 <div style="text-align:right;font-weight:700">{{ r.total }}</div>
-                <div style="text-align:right;color:#b23b3b" title="сам">{{ r.sure }}</div>
-                <div style="text-align:right;color:#a3776f" title="не сказано, кто">{{ r.unsure }}</div>
+                <div style="color:#5b5850">{{ r.what }}</div>
                 <div style="text-align:right;color:#8a8579">{{ r.last }}</div>
               </div>
             </sc-for>
           </div>
           <sc-if value="{{ glassHasStaffOthers }}" hint-placeholder-val="{{ true }}">
-            <div style="padding:10px 16px 14px;border-top:1px solid rgba(32,32,29,0.07);font-size:12.5px;color:#5b5850">Не сотрудники бара: {{ glassStaffOthers }}</div>
+            <div style="padding:10px 16px 14px;border-top:1px solid rgba(32,32,29,0.07);font-size:12.5px;color:#5b5850">Не сотрудники бара или виновник не назван: {{ glassStaffOthers }}</div>
           </sc-if>
         </div>
+
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;margin-bottom:16px">
           <div style="font-size:14.5px;font-weight:600;color:#5b5850;margin-bottom:12px">Бой по месяцам</div>
           <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;height:150px">
@@ -3815,31 +3812,28 @@ window.__resources = {}
         </div>
 
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;overflow:hidden;margin-bottom:16px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:14px 16px 4px">
-            <div style="font-size:14.5px;font-weight:600;color:#5b5850">Кто бьёт: рейтинг сотрудников за период</div>
-            <div style="display:flex;gap:14px;font-size:12px;color:#8a8579">
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#b23b3b;margin-right:5px"></span>написал, что разбил сам</span>
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#e3b8b0;margin-right:5px"></span>сообщил, кто разбил — не сказано</span>
-            </div>
-          </div>
-          <div style="padding:0 16px 8px;font-size:12.5px;color:#8a8579">Бой гостей, техперсонала, барбека и стажёров сюда не входит.</div>
+          <div style="padding:14px 16px 4px;font-size:14.5px;font-weight:600;color:#5b5850">Кто бьёт: сотрудники за последние 30 дней</div>
+          <div style="padding:0 16px 8px;font-size:12.5px;color:#8a8579">Виновник — по тексту сообщения: «разбил(а)» — автор, на мойке — техперсонал, названный коллега — он.</div>
+          <sc-if value="{{ glassNoStaff }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:8px 16px 12px;font-size:13px;color:#8a8579">За 30 дней сотрудники бара ничего не разбили</div>
+          </sc-if>
           <div style="overflow-x:auto">
-            <sc-for list="{{ glassStaffRating }}" as="r" hint-placeholder-count="6">
-              <div style="display:grid;grid-template-columns:28px 150px minmax(160px,1fr) 44px 60px 60px 70px;gap:10px;padding:8px 16px;border-top:1px solid rgba(32,32,29,0.07);font-size:13px;align-items:center;min-width:640px">
+            <sc-for list="{{ glassStaffRating }}" as="r" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:28px 130px minmax(120px,1fr) 40px minmax(160px,1.2fr) 70px;gap:10px;padding:8px 16px;border-top:1px solid rgba(32,32,29,0.07);font-size:13px;align-items:center;min-width:640px">
                 <div style="color:#8a8579;font-weight:600">{{ r.place }}</div>
                 <div style="font-weight:600">{{ r.name }}</div>
-                <div style="display:flex;height:12px;background:#f2efe8;border-radius:4px;overflow:hidden"><div style="width:{{ r.sureWidth }};background:#b23b3b"></div><div style="width:{{ r.unsureWidth }};background:#e3b8b0"></div></div>
+                <div style="height:12px;background:#f2efe8;border-radius:4px"><div style="width:{{ r.width }};height:12px;border-radius:4px;background:#b23b3b"></div></div>
                 <div style="text-align:right;font-weight:700">{{ r.total }}</div>
-                <div style="text-align:right;color:#b23b3b" title="сам">{{ r.sure }}</div>
-                <div style="text-align:right;color:#a3776f" title="не сказано, кто">{{ r.unsure }}</div>
+                <div style="color:#5b5850">{{ r.what }}</div>
                 <div style="text-align:right;color:#8a8579">{{ r.last }}</div>
               </div>
             </sc-for>
           </div>
           <sc-if value="{{ glassHasStaffOthers }}" hint-placeholder-val="{{ true }}">
-            <div style="padding:10px 16px 14px;border-top:1px solid rgba(32,32,29,0.07);font-size:12.5px;color:#5b5850">Не сотрудники бара: {{ glassStaffOthers }}</div>
+            <div style="padding:10px 16px 14px;border-top:1px solid rgba(32,32,29,0.07);font-size:12.5px;color:#5b5850">Не сотрудники бара или виновник не назван: {{ glassStaffOthers }}</div>
           </sc-if>
         </div>
+
         <div style="background:#ffffff;border:1px solid rgba(32,32,29,0.10);border-radius:14px;padding:14px 16px;margin-bottom:16px">
           <div style="font-size:14.5px;font-weight:600;color:#5b5850;margin-bottom:12px">Бой по месяцам</div>
           <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;height:150px">
@@ -4633,8 +4627,9 @@ function glassBars(counter, colorOf) {
   }));
 }
 
-// Кто разбил. Сообщение пишет обычно тот, кто разбил, но не всегда: бьют
-// гости, техперсонал, стажёры, иногда в сообщении назван коллега.
+// Кто разбил — только по тексту сообщения. «Разбил(а)» без имени — автор
+// сообщения; бой на мойке — техперсонал; гости, стажёры и названный коллега —
+// они. Если из текста не понять, бой ни на кого не записывается.
 // Имена из Telegram приводятся к коротким: «Булат офик Истина» → «Булат».
 const GLASS_NAME_ALIASES = {};
 function glassStaffName(who) {
@@ -4644,18 +4639,20 @@ function glassStaffName(who) {
   return short.charAt(0).toUpperCase() + short.slice(1);
 }
 function glassCulprit(e, it) {
-  const t = (e.text || '').toLowerCase();
+  const text = e.text || '';
+  const t = text.toLowerCase();
   if (it.reason === 'Гости') return { group: 'Гости' };
-  if (/барбек/.test(t)) return { group: 'Барбек' };
-  if (it.reason === 'Техперсонал') return { group: 'Техперсонал' };
+  if (/барбек/.test(t)) return { staff: 'Барбек' };
+  if (it.reason === 'Техперсонал' || /мойк|раковин/.test(t)) return { group: 'Техперсонал' };
   if (/стаж[её]р/.test(t)) return { group: 'Стажёры' };
   // «разбила Динара», «Даша разбила»
-  const named = (e.text || '').match(/(?:разбил|уронил)[аи]?\s+([А-ЯЁ][а-яё]+)/) ||
-    (e.text || '').match(/([А-ЯЁ][а-яё]+)\s+(?:разбил|уронил)[аи]?(?![а-яё])/);
-  if (named && named[1] !== 'Бой') return { staff: glassStaffName(named[1]), sure: true };
-  const self = /(^|[^а-яё])(разбил|разбила|уронил|уронила)(?![а-яё])/.test(t);
-  return { staff: glassStaffName(e.who), sure: self };
+  const named = text.match(/(?:разбил|уронил)[аи]?\s+([А-ЯЁ][а-яё]+)/) ||
+    text.match(/([А-ЯЁ][а-яё]+)\s+(?:разбил|уронил)[аи]?(?![а-яё])/);
+  if (named && named[1] !== 'Бой') return { staff: glassStaffName(named[1]) };
+  if (/(^|[^а-яё])(я\s+разбил|разбил|разбила|уронил|уронила)(?![а-яё])/.test(t)) return { staff: glassStaffName(e.who) };
+  return { group: 'Не указано, кто' };
 }
+const GLASS_RATING_DAYS = 30;
 
 function glassView(period) {
   const d = glassData();
@@ -4705,7 +4702,7 @@ function glassView(period) {
   // Аналитика за выбранный период
   const now = Date.now();
   const from = period === 'count' ? t0 : period === 'all' ? 0 : now - Number(period) * 86400000;
-  const byReason = {}, byItem = {}, byStaff = {}, byGroup = {};
+  const byReason = {}, byItem = {};
   let periodTotal = 0;
   for (const e of events) {
     if (new Date(e.date).getTime() < from) continue;
@@ -4713,22 +4710,28 @@ function glassView(period) {
       byReason[it.reason] = (byReason[it.reason] || 0) + it.qty;
       byItem[it.item] = (byItem[it.item] || 0) + it.qty;
       periodTotal += it.qty;
-      const c = glassCulprit(e, it);
-      if (c.group) { byGroup[c.group] = (byGroup[c.group] || 0) + it.qty; continue; }
-      const st = byStaff[c.staff] || (byStaff[c.staff] = { sure: 0, unsure: 0, last: e.date });
-      st[c.sure ? 'sure' : 'unsure'] += it.qty;
-      st.last = e.date;
     }
   }
-  const staffRows = Object.entries(byStaff)
-    .map(([name, v]) => ({ name, ...v, total: v.sure + v.unsure }))
-    .sort((a, b) => b.total - a.total || b.sure - a.sure);
-  const maxStaff = staffRows.length ? staffRows[0].total : 1;
+
+  // Рейтинг сотрудников — всегда за последние 30 дней
+  const byStaff = {}, byGroup = {};
+  for (const e of events) {
+    if (new Date(e.date).getTime() < now - GLASS_RATING_DAYS * 86400000) continue;
+    for (const it of e.items) {
+      const c = glassCulprit(e, it);
+      if (c.group) { byGroup[c.group] = (byGroup[c.group] || 0) + it.qty; continue; }
+      const st = byStaff[c.staff] || (byStaff[c.staff] = { n: 0, last: e.date, what: [] });
+      st.n += it.qty;
+      st.last = e.date;
+      st.what.push(it.item.toLowerCase() + (it.qty > 1 ? ' ×' + it.qty : ''));
+    }
+  }
+  const staffRows = Object.entries(byStaff).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.n - a.n);
+  const maxStaff = staffRows.length ? staffRows[0].n : 1;
   const glassStaffRating = staffRows.map((r, i) => ({
-    place: String(i + 1), name: r.name, total: String(r.total),
-    sure: r.sure ? String(r.sure) : '—', unsure: r.unsure ? String(r.unsure) : '—',
-    sureWidth: Math.round(r.sure / maxStaff * 100) + '%', unsureWidth: Math.round(r.unsure / maxStaff * 100) + '%',
-    last: glassDate(r.last, true),
+    place: String(i + 1), name: r.name, total: String(r.n),
+    width: Math.max(3, Math.round(r.n / maxStaff * 100)) + '%',
+    what: r.what.join(', '), last: glassDate(r.last, true),
   }));
   const glassStaffOthers = Object.entries(byGroup).sort((a, b) => b[1] - a[1])
     .map(([g, n]) => `${g} — ${n}`).join(' · ');
@@ -4780,7 +4783,7 @@ function glassView(period) {
     glassCountNote: `Подсчёт от ${glassDate(count.date, true)}, дальше вычитается бой из чата и прибавляется приход. Жёлтым — осталось 2 и меньше.`,
     glassReasonBars: glassBars(byReason, (l) => GLASS_REASON_COLORS[l] || '#a39e92'),
     glassItemBars: glassBars(byItem, () => '#8a7a52').slice(0, 10),
-    glassStaffRating, glassStaffOthers, glassHasStaffOthers: !!glassStaffOthers,
+    glassStaffRating, glassStaffOthers, glassHasStaffOthers: !!glassStaffOthers, glassNoStaff: !staffRows.length,
     glassPeriodTotal: `${periodTotal} ${glassPlural(periodTotal)}`,
     glassNoPeriodData: periodTotal === 0,
     glassMonthBars: months.map(m => ({ label: m.label, n: m.n ? String(m.n) : '', h: Math.round(m.n / maxM * 110) + 'px' })),
