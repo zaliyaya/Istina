@@ -101,7 +101,10 @@ def tg(token, method, **params):
 
 
 def poll():
-    token = os.environ["TELEGRAM_BOT_TOKEN"]
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if not token:
+        print("нет секрета TELEGRAM_BOT_TOKEN, пропускаю")
+        return
     only_chat = os.environ.get("GLASS_CHAT_ID", "").strip()
     data = load()
     before = json.dumps([data["counts"], data["receipts"], data["events"]], ensure_ascii=False)
