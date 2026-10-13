@@ -3025,7 +3025,10 @@ window.__resources = {}
             <button onClick="{{ onAddOwnHypothesis }}" title="Добавить" style="font:inherit;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;background:#20201d;color:#f7f5f0;cursor:pointer">＋</button>
           </div>
           <sc-for list="{{ hypothesisRows }}" as="h" hint-placeholder-count="3">
-            <div style="border-top:1px solid rgba(32,32,29,0.08);padding:12px 0">
+            <div style="border-top:1px solid rgba(32,32,29,0.08);padding:12px 0;opacity:{{ h.opacity }}">
+              <sc-if value="{{ h.groupStart }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#8a8579;margin-bottom:6px">{{ h.groupLabel }}</div>
+              </sc-if>
               <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
                 <div style="font-size:13.5px;font-weight:600;line-height:1.4">{{ h.title }}</div>
                 <button onClick="{{ h.onDelete }}" title="Удалить" style="border:none;background:transparent;color:#b3ada0;font-size:15px;cursor:pointer;padding:0 2px;line-height:1">×</button>
@@ -3041,7 +3044,7 @@ window.__resources = {}
                 </div>
               </sc-if>
               <div style="display:flex;gap:4px;margin-top:8px">
-                <input type="text" value="{{ h.noteValue }}" onChange="{{ h.onNoteChange }}" placeholder="Почему так? Что узнали?" style="flex:1;min-width:0;font:inherit;font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
+                <input type="text" value="{{ h.noteValue }}" onChange="{{ h.onNoteChange }}" onBlur="{{ h.onNoteSave }}" onKeyDown="{{ h.onNoteKey }}" placeholder="{{ h.notePlaceholder }}" style="flex:1;min-width:0;font:inherit;font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
                 <sc-if value="{{ h.noteDirty }}" hint-placeholder-val="{{ false }}">
                   <button onClick="{{ h.onNoteSave }}" style="border:none;font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;background:#20201d;color:#f7f5f0">Сохранить</button>
                 </sc-if>
@@ -3735,7 +3738,10 @@ window.__resources = {}
             <button onClick="{{ onAddOwnHypothesis }}" title="Добавить" style="font:inherit;font-size:14px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;background:#20201d;color:#f7f5f0;cursor:pointer">＋</button>
           </div>
           <sc-for list="{{ hypothesisRows }}" as="h" hint-placeholder-count="3">
-            <div style="border-top:1px solid rgba(32,32,29,0.08);padding:12px 0">
+            <div style="border-top:1px solid rgba(32,32,29,0.08);padding:12px 0;opacity:{{ h.opacity }}">
+              <sc-if value="{{ h.groupStart }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#8a8579;margin-bottom:6px">{{ h.groupLabel }}</div>
+              </sc-if>
               <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
                 <div style="font-size:13.5px;font-weight:600;line-height:1.4">{{ h.title }}</div>
                 <button onClick="{{ h.onDelete }}" title="Удалить" style="border:none;background:transparent;color:#b3ada0;font-size:15px;cursor:pointer;padding:0 2px;line-height:1">×</button>
@@ -3751,7 +3757,7 @@ window.__resources = {}
                 </div>
               </sc-if>
               <div style="display:flex;gap:4px;margin-top:8px">
-                <input type="text" value="{{ h.noteValue }}" onChange="{{ h.onNoteChange }}" placeholder="Почему так? Что узнали?" style="flex:1;min-width:0;font:inherit;font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
+                <input type="text" value="{{ h.noteValue }}" onChange="{{ h.onNoteChange }}" onBlur="{{ h.onNoteSave }}" onKeyDown="{{ h.onNoteKey }}" placeholder="{{ h.notePlaceholder }}" style="flex:1;min-width:0;font:inherit;font-size:12px;padding:4px 7px;border-radius:6px;border:1px solid rgba(32,32,29,0.14);background:#faf9f6;color:#20201d">
                 <sc-if value="{{ h.noteDirty }}" hint-placeholder-val="{{ false }}">
                   <button onClick="{{ h.onNoteSave }}" style="border:none;font:inherit;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;background:#20201d;color:#f7f5f0">Сохранить</button>
                 </sc-if>
@@ -4843,6 +4849,14 @@ function glassView(period) {
 // Apps Script (код — sync/hypotheses.gs). Пустой адрес — гипотезы живут только
 // в браузере, как раньше.
 const HYPOTHESES_API = 'https://script.google.com/macros/s/AKfycby8kdCFkTOMRfO6Oa5o5zWNZUhNR-1gvXXXl2Pbpi-pbhkRIo1_wMO_ETEMr8SSpDhX/exec';
+function askRejectReason(current) {
+  for (;;) {
+    const r = window.prompt('Почему не согласны? Причина попадёт в лист «Отклонённые» общей таблицы.', current || '');
+    if (r == null) return null;
+    if (r.trim()) return r.trim();
+    current = '';
+  }
+}
 function hypRequest(body) {
   const req = body
     // text/plain — без предварительного CORS-запроса, который Apps Script не понимает
@@ -5377,25 +5391,42 @@ class Component extends DCLogic {
   // Несогласие с инсайтом сохраняется гипотезой со статусом «Не согласны» и
   // причиной: так оно попадает в общую таблицу и учитывается при разборе недель.
   rejectInsight = (ins) => {
-    const note = window.prompt('Почему вы не согласны с этим инсайтом? Это попадёт в общую таблицу гипотез.');
-    if (note == null) return;
     const db = this.state.db;
     const existing = (db.hypotheses || []).find(h => h.title === ins.hypothesisTitle);
+    const note = askRejectReason(existing && existing.status === 'rejected' ? existing.note : '');
+    if (note == null) return;
     if (existing) {
-      this.setHypothesisStatus(existing.id, 'rejected');
-      this.setHypothesisNote(existing.id, note.trim());
+      this.updateHypothesis(existing.id, { status: 'rejected', note });
       return;
     }
     this.addHypothesis({ title: ins.hypothesisTitle, text: `${ins.hypothesis} ${ins.check}`, item: ins.item, section: ins.section, status: 'rejected', note: note.trim() });
   };
-  setHypothesisNote = (id, note) => {
+  // Статус и обратная связь уходят в таблицу одним запросом, иначе ответ
+  // на первый может прийти позже второго и вернуть старое значение.
+  updateHypothesis = (id, patch) => {
     const db = this.state.db;
-    db.hypotheses = (db.hypotheses || []).map(h => (h.id === id ? { ...h, note } : h));
+    db.hypotheses = (db.hypotheses || []).map(h => (h.id === id ? { ...h, ...patch } : h));
     const drafts = { ...(this.state.noteDrafts || {}) };
-    delete drafts[id];
+    if ('note' in patch) delete drafts[id];
     this.persist(db);
     this.setState({ db, noteDrafts: drafts });
     this.pushHypotheses({ action: 'upsert', hypotheses: db.hypotheses.filter(h => h.id === id) });
+  };
+  setHypothesisNote = (id, note) => this.updateHypothesis(id, { note });
+  // Обратная связь сохраняется по Enter и когда поле теряет фокус — кнопка
+  // «Сохранить» остаётся, но забыть её нажать больше нельзя.
+  saveHypothesisNote = (id) => {
+    const draft = (this.state.noteDrafts || {})[id];
+    if (draft == null) return;
+    const h = (this.state.db.hypotheses || []).find(x => x.id === id);
+    if (!h) return;
+    if (draft.trim() === (h.note || '')) {
+      const drafts = { ...this.state.noteDrafts };
+      delete drafts[id];
+      this.setState({ noteDrafts: drafts });
+      return;
+    }
+    this.setHypothesisNote(id, draft.trim());
   };
   onHypothesisDraftChange = (e) => this.setState({ hypothesisDraft: e.target.value });
   addOwnHypothesis = () => {
@@ -5404,12 +5435,20 @@ class Component extends DCLogic {
     this.addHypothesis({ title: text, section: this.state.section === 'all' ? '' : this.state.section });
     this.setState({ hypothesisDraft: '' });
   };
+  // «Не согласны» без причины не ставится: причина — колонка в листе
+  // «Отклонённые». Отзыв, набранный к принятой гипотезе, при этом не теряется.
   setHypothesisStatus = (id, status) => {
-    const db = this.state.db;
-    db.hypotheses = (db.hypotheses || []).map(h => (h.id === id ? { ...h, status } : h));
-    this.persist(db);
-    this.setState({ db });
-    this.pushHypotheses({ action: 'upsert', hypotheses: db.hypotheses.filter(h => h.id === id) });
+    const h = (this.state.db.hypotheses || []).find(x => x.id === id);
+    if (!h || (h.status || 'active') === status) return;
+    const draft = (this.state.noteDrafts || {})[id];
+    const note = draft != null ? draft.trim() : (h.note || '');
+    if (status === 'rejected') {
+      const reason = askRejectReason(note);
+      if (reason == null) return;
+      this.updateHypothesis(id, { status, note: reason });
+      return;
+    }
+    this.updateHypothesis(id, draft != null ? { status, note } : { status });
   };
   deleteHypothesis = (id) => {
     if (!window.confirm('Удалить гипотезу?')) return;
@@ -6154,7 +6193,10 @@ class Component extends DCLogic {
     const statusColor = { active: '#20201d', yes: '#3f7a4f', no: '#b23b3b', rejected: '#8a8579' };
     const noteDrafts = this.state.noteDrafts || {};
     const pctChange = (a, b) => (b > 0 ? ` (${a >= b ? '+' : '−'}${Math.abs(((a - b) / b) * 100).toFixed(0)}%)` : '');
-    const hypothesisRows = hypotheses.slice().reverse().map(h => {
+    const isRejected = (h) => h.status === 'rejected';
+    const hypothesisRows = hypotheses.slice().reverse()
+      .sort((x, y) => isRejected(x) - isRejected(y))
+      .map((h, i, all) => {
       const before = h.startWeek ? weeksAll.filter(wk => wk < h.startWeek).slice(-4) : [];
       const after = h.startWeek ? weeksAll.filter(wk => wk >= h.startWeek) : [];
       const b = this.hypothesisWeekly(db, h, before);
@@ -6170,10 +6212,15 @@ class Component extends DCLogic {
         effectAfter: a ? `После (${a.n} ${pluralWeeks(a.n)}): ${describe(a)}${pctChange(a.profit, b ? b.profit : 0)}` : `После: появится с загрузкой недели с ${fmtDay(h.startWeek)}`,
         effectColor: a && b ? (a.profit >= b.profit ? '#3f7a4f' : '#b23b3b') : '#8a8579',
         onDelete: () => this.deleteHypothesis(h.id),
+        groupStart: isRejected(h) && (i === 0 || !isRejected(all[i - 1])),
+        groupLabel: 'Отклонённые',
+        opacity: isRejected(h) ? '0.7' : '1',
+        notePlaceholder: isRejected(h) ? 'Причина отказа' : 'Обратная связь: почему так, что узнали?',
+        onNoteKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.saveHypothesisNote(h.id); } },
         noteValue: noteDrafts[h.id] != null ? noteDrafts[h.id] : (h.note || ''),
         noteDirty: noteDrafts[h.id] != null && noteDrafts[h.id] !== (h.note || ''),
         onNoteChange: (e) => this.setState({ noteDrafts: { ...(this.state.noteDrafts || {}), [h.id]: e.target.value } }),
-        onNoteSave: () => this.setHypothesisNote(h.id, (noteDrafts[h.id] || '').trim()),
+        onNoteSave: () => this.saveHypothesisNote(h.id),
         statuses: STATUSES.map(st => {
           const active = (h.status || 'active') === st.key;
           return { label: st.label, onClick: () => this.setHypothesisStatus(h.id, st.key), bg: active ? statusColor[st.key] : '#eeeae1', color: active ? '#ffffff' : '#5b5850' };
