@@ -13,6 +13,9 @@
 Сотрудники пишут в чат как раньше: «Бой, дегустка, разбила при натирке».
 Бот ставит 👌 на распознанное сообщение и отвечает, если не понял позицию.
 Ещё понимает «Подсчёт посуды» (строки «Вилки 32») и «Приход, белый бокал, 12».
+Если из сообщения о бое не понять, кто разбил («разбился при натирке»), бот
+спрашивает в чате «Кто разбил?». Ответ на этот вопрос (или на само сообщение о бое)
+записывается в событие полем culprit и идёт в рейтинг на вкладке «Посуда».
 """
 import json
 import os
@@ -23,7 +26,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(__file__))
-from parse import ITEMS, parse, parse_count, parse_receipt  # noqa: E402
+from parse import ITEMS, culprit, parse, parse_answer, parse_count, parse_receipt  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "glass", "data.json")
@@ -70,6 +73,9 @@ def iso(ts):
 def apply_message(data, chat_id, msg_id, date, who, text):
     """Учитывает одно сообщение (новое или отредактированное). Возвращает (тип, распознано ли)."""
     eid = f"{chat_id}:{msg_id}"
+    # ответ на «Кто разбил?» и вопрос бота переживают правку сообщения
+    keep = next(({k: e[k] for k in ("culprit", "ask_id") if k in e}
+                 for e in data["events"] if e.get("id") == eid), {})
     for key in ("events", "counts", "receipts"):
         data[key] = [e for e in data[key] if e.get("id") != eid]
     if COUNT_HEAD.match(text):
@@ -83,10 +89,37 @@ def apply_message(data, chat_id, msg_id, date, who, text):
         return "receipt", True
     items = parse(text)
     if items:
-        data["events"].append({"id": eid, "date": date, "who": who, "text": text[:300], "items": items})
+        data["events"].append({"id": eid, "date": date, "who": who, "text": text[:300], "items": items, **keep})
         data["events"].sort(key=lambda e: e["date"])
         return "breakage", all(i["kind"] != "unknown" for i in items)
     return None, False
+
+
+def needs_culprit(event):
+    """Из текста не понять, кто разбил, и в чате ещё не ответили."""
+    if "culprit" in event:
+        return False
+    return any(culprit(event["text"], it["reason"]) is None for it in event["items"] if it["kind"] != "unknown")
+
+
+def apply_answer(data, chat_id, msg, who):
+    """Ответ на вопрос бота «Кто разбил?» или на само сообщение о бое. Возвращает событие или None."""
+    to = msg.get("reply_to_message") or {}
+    text = msg.get("text") or ""
+    if not to or parse(text) or parse_receipt(text) or COUNT_HEAD.match(text):
+        return None
+    rid = to["message_id"]
+    event = next((e for e in data["events"] if e.get("ask_id") == f"{chat_id}:{rid}"), None)
+    if event is None:
+        event = next((e for e in data["events"] if e.get("id") == f"{chat_id}:{rid}" and needs_culprit(e)), None)
+    if event is None:
+        return None
+    ans = parse_answer(text)
+    if not ans:
+        return None
+    kind, name = ans
+    event["culprit"] = {"staff": who} if kind == "self" else {kind: name}
+    return event
 
 
 def tg(token, method, **params):
@@ -123,6 +156,15 @@ def poll():
             print("пропускаю чат", chat["id"], chat.get("title"))
             continue
         text = msg.get("text") or msg.get("caption") or ""
+        answered = apply_answer(data, chat["id"], msg, sender_name(msg))
+        if answered:
+            print("кто разбил:", answered["culprit"], answered["id"])
+            try:
+                tg(token, "setMessageReaction", chat_id=chat["id"], message_id=msg["message_id"],
+                   reaction=[{"type": "emoji", "emoji": "👌"}])
+            except Exception as e:
+                print("не смогла ответить:", e)
+            continue
         kind, ok = apply_message(data, chat["id"], msg["message_id"], iso(msg["date"]), sender_name(msg), text)
         if not kind:
             continue
@@ -131,6 +173,12 @@ def poll():
             if ok:
                 tg(token, "setMessageReaction", chat_id=chat["id"], message_id=msg["message_id"],
                    reaction=[{"type": "emoji", "emoji": "👌"}])
+                event = next((e for e in data["events"] if e["id"] == f"{chat['id']}:{msg['message_id']}"), None) \
+                    if kind == "breakage" else None
+                if event and "edited_message" not in u and "ask_id" not in event and needs_culprit(event):
+                    sent = tg(token, "sendMessage", chat_id=chat["id"], reply_to_message_id=msg["message_id"],
+                              text="Записала. А кто разбил? Ответьте на это сообщение: имя, «я», «гости» или «техперсонал».")
+                    event["ask_id"] = f"{chat['id']}:{sent['message_id']}"
             elif "edited_message" not in u:
                 if kind == "count":
                     unknown = data["counts"][-1]["unknown"]
