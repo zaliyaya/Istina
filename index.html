@@ -2697,6 +2697,7 @@ window.__resources = {}
         <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Дашборд</button>
         <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Категории</button>
         <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Инсайты</button>
+        <button onClick="{{ goEvents }}" style="border:none;background:{{ nav.events.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.events.color }}">Частные мероприятия</button>
         <button onClick="{{ goClub }}" style="border:none;background:{{ nav.club.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.club.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Винный клуб</button>
         <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Посуда</button>
         <button onClick="{{ goUds }}" style="border:none;background:{{ nav.uds.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.uds.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">UDS</button>
@@ -3013,6 +3014,13 @@ window.__resources = {}
       </div>
     </sc-if>
 
+<sc-if value="{{ tabIsEvents }}">
+<h1 style="font-family:Georgia,serif;font-size:28px">Частные мероприятия</h1>
+<p style="font-size:13px;color:#5b5850;line-height:1.6">Расходные накладные направления «Частные мероприятия». Все показатели относятся к выбранному периоду. Дополнительные списания включены один раз. Валовая прибыль не учитывает зарплату, аренду и прочие операционные расходы.</p>
+<sc-if value="{{ eventsEmpty }}"><p>За выбранный период документов нет.</p></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:20px 0">
+<sc-for list="{{ eventCards }}" as="c"><div style="background:#fff;border:1px solid #e5e1d8;border-radius:12px;padding:18px"><div style="color:#8a8579;font-size:12px">{{ c.label }}</div><div style="font:26px Georgia;margin:8px 0">{{ c.value }}</div><div style="font-size:12px;color:#8a8579">{{ c.sub }}</div></div></sc-for></div>
+<h2 style="font-size:18px;margin-top:28px">Динамика по неделям</h2><div style="overflow-x:auto;background:#fff;border-radius:12px;padding:12px"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left"><thead><tr><th style="padding:12px;color:#8a8579">Неделя</th><th style="padding:12px;color:#8a8579">Выручка</th><th style="padding:12px;color:#8a8579">Валовая прибыль</th><th style="padding:12px;color:#8a8579">Маржа</th><th style="padding:12px;color:#8a8579">Дат с выручкой</th></tr></thead><tbody><sc-for list="{{ eventWeeks }}" as="r"><tr><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.label }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.revenue }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.profit }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.margin }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.count }}</td></tr></sc-for></tbody></table></div><h2 style="font-size:18px;margin-top:28px">Кухня и бар</h2><div style="overflow-x:auto;background:#fff;border-radius:12px;padding:12px"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left"><thead><tr><th style="padding:12px;color:#8a8579">Направление</th><th style="padding:12px;color:#8a8579">Выручка</th><th style="padding:12px;color:#8a8579">Валовая прибыль</th><th style="padding:12px;color:#8a8579">Маржа</th><th style="padding:12px;color:#8a8579">Доля выручки</th></tr></thead><tbody><sc-for list="{{ eventSplit }}" as="r"><tr><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.label }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.revenue }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.profit }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.margin }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.count }}</td></tr></sc-for></tbody></table></div><h2 style="font-size:18px;margin-top:28px">Реестр по датам</h2><div style="overflow-x:auto;background:#fff;border-radius:12px;padding:12px"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left"><thead><tr><th style="padding:12px;color:#8a8579">Дата</th><th style="padding:12px;color:#8a8579">Комментарий</th><th style="padding:12px;color:#8a8579">Документы</th><th style="padding:12px;color:#8a8579">Выручка</th><th style="padding:12px;color:#8a8579">Себестоимость</th><th style="padding:12px;color:#8a8579">Валовая прибыль</th><th style="padding:12px;color:#8a8579">Маржа</th></tr></thead><tbody><sc-for list="{{ eventDetails }}" as="r"><tr><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.date }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.comment }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.docs }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.revenue }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.cost }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.profit }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.margin }}</td></tr></sc-for></tbody></table></div><p style="font-size:12px;color:#8a8579;line-height:1.6;margin-top:20px">Документы объединены по дате, а не по отдельному мероприятию: несколько событий в один день могут попасть в одну строку. Число гостей, тип события, загрузка зала и затраты на персонал в источнике не определены — показатели на гостя и чистая прибыль не рассчитываются.</p></sc-if>
     <!-- INSIGHTS TAB -->
     <sc-if value="{{ tabIsInsights }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
@@ -3662,6 +3670,7 @@ window.__resources = {}
         <button onClick="{{ goDashboard }}" style="border:none;background:{{ nav.dashboard.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.dashboard.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Дашборд</button>
         <button onClick="{{ goTable }}" style="border:none;background:{{ nav.table.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.table.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Категории</button>
         <button onClick="{{ goInsights }}" style="border:none;background:{{ nav.insights.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.insights.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Инсайты</button>
+        <button onClick="{{ goEvents }}" style="border:none;background:{{ nav.events.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.events.color }}">Частные мероприятия</button>
         <button onClick="{{ goClub }}" style="border:none;background:{{ nav.club.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.club.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Винный клуб</button>
         <button onClick="{{ goGlass }}" style="border:none;background:{{ nav.glass.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.glass.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">Посуда</button>
         <button onClick="{{ goUds }}" style="border:none;background:{{ nav.uds.bg }};font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;color:{{ nav.uds.color }};white-space:nowrap" style-hover="background:rgba(32,32,29,0.06)">UDS</button>
@@ -3978,6 +3987,13 @@ window.__resources = {}
       </div>
     </sc-if>
 
+<sc-if value="{{ tabIsEvents }}">
+<h1 style="font-family:Georgia,serif;font-size:28px">Частные мероприятия</h1>
+<p style="font-size:13px;color:#5b5850;line-height:1.6">Расходные накладные направления «Частные мероприятия». Все показатели относятся к выбранному периоду. Дополнительные списания включены один раз. Валовая прибыль не учитывает зарплату, аренду и прочие операционные расходы.</p>
+<sc-if value="{{ eventsEmpty }}"><p>За выбранный период документов нет.</p></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:20px 0">
+<sc-for list="{{ eventCards }}" as="c"><div style="background:#fff;border:1px solid #e5e1d8;border-radius:12px;padding:18px"><div style="color:#8a8579;font-size:12px">{{ c.label }}</div><div style="font:26px Georgia;margin:8px 0">{{ c.value }}</div><div style="font-size:12px;color:#8a8579">{{ c.sub }}</div></div></sc-for></div>
+<h2 style="font-size:18px;margin-top:28px">Динамика по неделям</h2><div style="overflow-x:auto;background:#fff;border-radius:12px;padding:12px"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left"><thead><tr><th style="padding:12px;color:#8a8579">Неделя</th><th style="padding:12px;color:#8a8579">Выручка</th><th style="padding:12px;color:#8a8579">Валовая прибыль</th><th style="padding:12px;color:#8a8579">Маржа</th><th style="padding:12px;color:#8a8579">Дат с выручкой</th></tr></thead><tbody><sc-for list="{{ eventWeeks }}" as="r"><tr><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.label }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.revenue }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.profit }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.margin }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.count }}</td></tr></sc-for></tbody></table></div><h2 style="font-size:18px;margin-top:28px">Кухня и бар</h2><div style="overflow-x:auto;background:#fff;border-radius:12px;padding:12px"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left"><thead><tr><th style="padding:12px;color:#8a8579">Направление</th><th style="padding:12px;color:#8a8579">Выручка</th><th style="padding:12px;color:#8a8579">Валовая прибыль</th><th style="padding:12px;color:#8a8579">Маржа</th><th style="padding:12px;color:#8a8579">Доля выручки</th></tr></thead><tbody><sc-for list="{{ eventSplit }}" as="r"><tr><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.label }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.revenue }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.profit }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.margin }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.count }}</td></tr></sc-for></tbody></table></div><h2 style="font-size:18px;margin-top:28px">Реестр по датам</h2><div style="overflow-x:auto;background:#fff;border-radius:12px;padding:12px"><table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left"><thead><tr><th style="padding:12px;color:#8a8579">Дата</th><th style="padding:12px;color:#8a8579">Комментарий</th><th style="padding:12px;color:#8a8579">Документы</th><th style="padding:12px;color:#8a8579">Выручка</th><th style="padding:12px;color:#8a8579">Себестоимость</th><th style="padding:12px;color:#8a8579">Валовая прибыль</th><th style="padding:12px;color:#8a8579">Маржа</th></tr></thead><tbody><sc-for list="{{ eventDetails }}" as="r"><tr><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.date }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.comment }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.docs }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.revenue }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.cost }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.profit }}</td><td style="padding:12px;border-top:1px solid #eeeae2;min-width:100px">{{ r.margin }}</td></tr></sc-for></tbody></table></div><p style="font-size:12px;color:#8a8579;line-height:1.6;margin-top:20px">Документы объединены по дате, а не по отдельному мероприятию: несколько событий в один день могут попасть в одну строку. Число гостей, тип события, загрузка зала и затраты на персонал в источнике не определены — показатели на гостя и чистая прибыль не рассчитываются.</p></sc-if>
     <!-- INSIGHTS TAB -->
     <sc-if value="{{ tabIsInsights }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
@@ -5395,7 +5411,7 @@ function hypRequest(body) {
 // мероприятия, винный клуб и передачи в Огиву. В «Отчёт о продажах» iiko
 // они не попадают, поэтому лежат отдельно (invoice-data) и добавляются
 // к итогам недели — в KPI и графики, но не в разбор по позициям и инсайты.
-const INVOICE_KINDS = { event: 'Частные мероприятия', club: 'Винный клуб', ogiva: 'Передачи в Огиву', clickice: 'ООО «Кликайс»', tyuz: 'ТЮЗ' };
+const INVOICE_KINDS = { event: 'Частные мероприятия', events: 'Частные мероприятия', club: 'Винный клуб', ogiva: 'Передачи в Огиву', clickice: 'ООО «Кликайс»', tyuz: 'ТЮЗ' };
 let INVOICES = null;
 function invoiceData() {
   if (INVOICES) return INVOICES;
@@ -5625,8 +5641,8 @@ function udsView(weekRevenue) {
 // Разделы отчёта — отдельные страницы сайта: /categories/, /insights/,
 // /posuda/, /data/; дашборд — главная. Деплой кладёт копию index.html в
 // каждую папку, а страница по адресу понимает, какой раздел открыть.
-const PAGE_SLUGS = { dashboard: '', table: 'categories', insights: 'insights', club: 'wine-club', glass: 'posuda', uds: 'uds', data: 'data' };
-const PAGE_TITLES = { dashboard: 'Дашборд', table: 'Категории', insights: 'Инсайты', club: 'Винный клуб', glass: 'Посуда', uds: 'UDS', data: 'Данные' };
+const PAGE_SLUGS = { dashboard: '', table: 'categories', insights: 'insights', events: 'private-events', club: 'wine-club', glass: 'posuda', uds: 'uds', data: 'data' };
+const PAGE_TITLES = { dashboard: 'Дашборд', table: 'Категории', insights: 'Инсайты', events: 'Частные мероприятия', club: 'Винный клуб', glass: 'Посуда', uds: 'UDS', data: 'Данные' };
 
 function pageFromPath() {
   // Заглушки в папках разделов перекидывают на главную с ?page=раздел
@@ -6215,6 +6231,7 @@ class Component extends DCLogic {
   setInsightKind = (kind) => this.setState({ insightKind: kind });
   goInsights = () => this.openPage('insights');
   goGlass = () => this.openPage('glass');
+  goEvents = () => this.openPage('events');
   goClub = () => this.openPage('club');
   goUds = () => this.openPage('uds');
 
@@ -6346,7 +6363,7 @@ class Component extends DCLogic {
   setSectionBar = () => this.setState({ section: 'bar', category: '', trendScope: 'bar' });
   setWeeklyTopQty = () => this.setState({weeklyTopMetric:'qty'});
   setWeeklyTopProfit = () => this.setState({weeklyTopMetric:'profit'});
-  periodKey() { return this.state.tab === 'insights' ? 'insightsPeriod' : 'period'; }
+  periodKey() { return this.state.tab === 'events' ? 'eventsPeriod' : this.state.tab === 'insights' ? 'insightsPeriod' : 'period'; }
   onPeriodChange = (e) => this.setState({ [this.periodKey()]: e.target.value });
   onCustomFromChange = (e) => this.setState({ [this.periodKey() + 'From']: e.target.value });
   onCustomToChange = (e) => this.setState({ [this.periodKey() + 'To']: e.target.value });
@@ -7024,6 +7041,36 @@ class Component extends DCLogic {
       return r ? `${/^[А-ЯЁ][а-яё]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label} ${fmtRub(r)}` : '';
     }).filter(Boolean);
     const invoiceNote = invParts.length ? 'В том числе по расходным накладным: ' + invParts.join(' · ') + '. Подробнее — на странице «Винный клуб».' : '';
+    const eventDocs = invoicesFor(weeksSel).filter(d => d.kind === 'event');
+    const eventRev = d => (d.kitchen?.revenue || 0) + (d.bar?.revenue || 0);
+    const eventProfit = d => (d.kitchen?.profit || 0) + (d.bar?.profit || 0);
+    const sumEvent = (docs, fn) => docs.reduce((n,d) => n + fn(d),0);
+    const er = sumEvent(eventDocs,eventRev), ep = sumEvent(eventDocs,eventProfit);
+    const dates = [...new Set(eventDocs.map(d => d.date))].sort().reverse();
+    const paidDates = dates.filter(date => eventDocs.some(d => d.date === date && eventRev(d)>0));
+    const margin = (r,p) => r > 0 ? (p/r*100).toFixed(1)+'%' : '—';
+    const allRevenue = weeksSel.reduce((n,w) => n + this.weekAggregate(db,w,'all').revenue,0);
+    const previousEventDocs = invoicesFor(weeksPrev).filter(d => d.kind === 'event');
+    const prevEventRevenue = sumEvent(previousEventDocs,eventRev);
+    const eventCards = [
+      {label:'Выручка',value:fmtRub(er),sub:prevEventRevenue>0 ? ((er/prevEventRevenue-1)*100).toFixed(1)+'% к предыдущему периоду' : 'Нет базы для сравнения'},
+      {label:'Валовая прибыль',value:fmtRub(ep),sub:'После себестоимости и дополнительных списаний'},
+      {label:'Валовая маржа',value:margin(er,ep),sub:'Валовая прибыль / выручка'},
+      {label:'Дат с выручкой',value:String(paidDates.length),sub:eventDocs.length+' документов; одна дата может включать несколько событий'},
+      {label:'Средняя выручка на дату',value:paidDates.length ? fmtRub(er/paidDates.length) : '—',sub:'Не является средним чеком гостя'},
+      {label:'Доля в выручке бизнеса',value:margin(allRevenue,er),sub:'За тот же выбранный период'},
+      {label:'Себестоимость',value:fmtRub(er-ep),sub:'Включает документы без выручки'},
+      {label:'Прибыль на дату',value:paidDates.length ? fmtRub(ep/paidDates.length) : '—',sub:'Вся валовая прибыль периода / даты с выручкой'}
+    ];
+    const eventDetails = dates.map(date => {
+      const docs=eventDocs.filter(d=>d.date===date), r=sumEvent(docs,eventRev), p=sumEvent(docs,eventProfit);
+      return {date:fmtDay(date),comment:docs.map(d=>d.comment || 'Без комментария').filter((v,i,a)=>a.indexOf(v)===i).join(' · '),docs:docs.map(d=>'№ '+d.doc).join(', '),revenue:fmtRub(r),profit:fmtRub(p),margin:margin(r,p),cost:fmtRub(r-p)};
+    });
+    const eventWeeks = weeksSel.map(w => {
+      const docs=(invoiceData()[w]||[]).filter(d=>d.kind==='event'),r=sumEvent(docs,eventRev),p=sumEvent(docs,eventProfit);
+      return {label:weekLabel(w),revenue:fmtRub(r),profit:fmtRub(p),margin:margin(r,p),count:String(new Set(docs.filter(d=>eventRev(d)>0).map(d=>d.date)).size)};
+    }).reverse();
+    const eventSplit = ['kitchen','bar'].map(sec => {const r=sumEvent(eventDocs,d=>d[sec]?.revenue||0),p=sumEvent(eventDocs,d=>d[sec]?.profit||0);return {label:sec==='kitchen'?'Кухня':'Бар',revenue:fmtRub(r),profit:fmtRub(p),margin:margin(r,p),count:margin(er,r)};});
     const club = clubView(weeksAll, weeksAll.reduce((s, wk) => s + this.weekAggregate(db, wk, 'all').revenue, 0));
 
     const glass = glassView(this.state.glassPeriod);
@@ -7038,6 +7085,7 @@ class Component extends DCLogic {
       glassCards: [], glassStockGroups: [], glassReasonBars: [], glassItemBars: [], glassStaffRating: [], glassMonthBars: [], glassLog: [],
       ...glass, glassHasData: !glass.glassEmpty, glassPeriodTags,
       tabIsGlass: tab === 'glass', goGlass: this.goGlass,
+      eventCards, eventDetails, eventWeeks, eventSplit, eventsEmpty: !eventDocs.length, tabIsEvents: tab === 'events', goEvents: this.goEvents,
       ...club, tabIsClub: tab === 'club', goClub: this.goClub,
       udsCards: [], udsSegments: [], udsMonthBars: [], udsWeekRows: [], udsMailings: [], udsReview: [], udsHypotheses: [],
       ...uds, udsHasData: !uds.udsEmpty, tabIsUds: tab === 'uds', goUds: this.goUds,
@@ -7061,7 +7109,7 @@ class Component extends DCLogic {
       kitchenLegendBad: this.state.tableMetric === 'markup' ? 'наценка ниже обычной или ниже медианы группы' : 'провал недели или аутсайдер группы',
       nav: Object.fromEntries(Object.keys(PAGE_SLUGS).map((k) => [k, k === tab ? { bg: '#ffffff', color: '#20201d' } : { bg: 'transparent', color: '#5b5850' }])),
       tabIsDashboard: tab === 'dashboard', tabIsTable: tab === 'table', tabIsData: tab === 'data', tabIsInsights: tab === 'insights',
-      showFilterBar: tab === 'dashboard' || tab === 'table' || tab === 'insights',
+      showFilterBar: tab === 'events' || tab === 'dashboard' || tab === 'table' || tab === 'insights',
       sectionAllAvailable: tab === 'dashboard' || tab === 'insights',
       goDashboard: this.goDashboard, goTable: this.goTable, goData: this.goData, goInsights: this.goInsights,
       insightCards, noInsightCards: insightCards.length === 0, insightKindTags,
