@@ -2983,7 +2983,7 @@ window.__resources = {}
             </div>
           </sc-for>
         </div>
-        <section style="margin-top:24px;background:#fff;border:1px solid #e5e1d8;border-radius:14px;padding:20px">
+        <sc-if value="{{ showWeeklyTop }}"><section style="margin-top:24px;background:#fff;border:1px solid #e5e1d8;border-radius:14px;padding:20px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px">
             <h2 style="font-size:18px;margin:0">Топ-3 по неделям</h2>
             <div style="display:flex;gap:6px">
@@ -2991,7 +2991,7 @@ window.__resources = {}
               <button onClick="{{ setWeeklyTopProfit }}" style="font:inherit;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:{{ weeklyTopProfitBg }};color:{{ weeklyTopProfitColor }}">Прибыль</button>
             </div>
           </div>
-          <div style="font-size:12px;color:#8a8579;margin-bottom:18px">От новых недель к старым · длина полосы — относительно лидера этой недели</div>
+          <div style="font-size:12px;color:#8a8579;margin-bottom:18px">От новых недель к старым · точные значения по каждому месту</div>
           <sc-for list="{{ weeklyTopSections }}" as="sec">
             <h3 style="font-size:15px;margin:20px 0 10px">{{ sec.title }}</h3>
             <div style="overflow-x:auto">
@@ -3001,7 +3001,7 @@ window.__resources = {}
                   <div style="display:grid;grid-template-columns:120px repeat(3,minmax(0,1fr));gap:16px;padding:14px 12px;border-bottom:1px solid #eeeae2;align-items:start">
                     <div style="font-size:12px;font-weight:600;padding-top:2px">{{ week.label }}</div>
                     <sc-for list="{{ week.items }}" as="it">
-                      <div style="min-width:0;font-size:12px;line-height:1.4"><div>{{ it.name }}</div><div style="font-weight:700;margin-top:6px">{{ it.value }}</div><div style="height:4px;background:#eeeae2;border-radius:3px;margin-top:5px"><div style="height:4px;width:{{ it.width }};background:{{ it.color }};border-radius:3px"></div></div></div>
+                      <div style="min-width:0;font-size:12px;line-height:1.4"><div>{{ it.name }}</div><div style="font-weight:700;margin-top:6px">{{ it.value }}</div></div>
                     </sc-for>
                     <sc-if value="{{ week.empty }}"><div style="color:#8a8579;font-size:12px">Нет продаж</div></sc-if>
                   </div>
@@ -3009,7 +3009,7 @@ window.__resources = {}
               </div>
             </div>
           </sc-for>
-        </section>
+        </section></sc-if>
       </div>
     </sc-if>
 
@@ -3948,7 +3948,7 @@ window.__resources = {}
             </div>
           </sc-for>
         </div>
-        <section style="margin-top:24px;background:#fff;border:1px solid #e5e1d8;border-radius:14px;padding:20px">
+        <sc-if value="{{ showWeeklyTop }}"><section style="margin-top:24px;background:#fff;border:1px solid #e5e1d8;border-radius:14px;padding:20px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px">
             <h2 style="font-size:18px;margin:0">Топ-3 по неделям</h2>
             <div style="display:flex;gap:6px">
@@ -3956,7 +3956,7 @@ window.__resources = {}
               <button onClick="{{ setWeeklyTopProfit }}" style="font:inherit;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:{{ weeklyTopProfitBg }};color:{{ weeklyTopProfitColor }}">Прибыль</button>
             </div>
           </div>
-          <div style="font-size:12px;color:#8a8579;margin-bottom:18px">От новых недель к старым · длина полосы — относительно лидера этой недели</div>
+          <div style="font-size:12px;color:#8a8579;margin-bottom:18px">От новых недель к старым · точные значения по каждому месту</div>
           <sc-for list="{{ weeklyTopSections }}" as="sec">
             <h3 style="font-size:15px;margin:20px 0 10px">{{ sec.title }}</h3>
             <div style="overflow-x:auto">
@@ -3966,7 +3966,7 @@ window.__resources = {}
                   <div style="display:grid;grid-template-columns:120px repeat(3,minmax(0,1fr));gap:16px;padding:14px 12px;border-bottom:1px solid #eeeae2;align-items:start">
                     <div style="font-size:12px;font-weight:600;padding-top:2px">{{ week.label }}</div>
                     <sc-for list="{{ week.items }}" as="it">
-                      <div style="min-width:0;font-size:12px;line-height:1.4"><div>{{ it.name }}</div><div style="font-weight:700;margin-top:6px">{{ it.value }}</div><div style="height:4px;background:#eeeae2;border-radius:3px;margin-top:5px"><div style="height:4px;width:{{ it.width }};background:{{ it.color }};border-radius:3px"></div></div></div>
+                      <div style="min-width:0;font-size:12px;line-height:1.4"><div>{{ it.name }}</div><div style="font-weight:700;margin-top:6px">{{ it.value }}</div></div>
                     </sc-for>
                     <sc-if value="{{ week.empty }}"><div style="color:#8a8579;font-size:12px">Нет продаж</div></sc-if>
                   </div>
@@ -3974,7 +3974,7 @@ window.__resources = {}
               </div>
             </div>
           </sc-for>
-        </section>
+        </section></sc-if>
       </div>
     </sc-if>
 
@@ -6557,7 +6557,11 @@ class Component extends DCLogic {
 
     // trend (independent of the section toggle — has its own scope switch)
     const trendScope = this.state.trendScope;
-    const trendRows = weeksSel.map(wk => ({ wk, agg: this.weekAggregate(db, wk, trendScope === 'total' ? 'all' : trendScope) }));
+    // Keep eight weeks of context, ending at the last selected week.
+    const chartEnd = weeksSel.length ? weeksAll.indexOf(weeksSel[weeksSel.length - 1]) + 1 : weeksAll.length;
+    const chartStart = Math.max(0, chartEnd - 8);
+    const chartWeeks = weeksSel.length >= 8 ? weeksSel : weeksAll.slice(chartStart, Math.max(chartEnd, Math.min(weeksAll.length, chartStart + 8))); 
+    const trendRows = chartWeeks.map(wk => ({ wk, agg: this.weekAggregate(db, wk, trendScope === 'total' ? 'all' : trendScope) }));
     const maxRev = Math.max(1, ...trendRows.map(t => t.agg.revenue));
     const trendPoints = trendRows.map(t => ({
       label: weekLabel(t.wk),
@@ -6571,10 +6575,10 @@ class Component extends DCLogic {
     const trendActiveStyle = (v) => v ? { bg: '#20201d', color: '#f7f5f0' } : { bg: 'transparent', color: '#5b5850' };
     const tT = trendActiveStyle(trendScope === 'total'), tK = trendActiveStyle(trendScope === 'kitchen'), tB = trendActiveStyle(trendScope === 'bar');
     const trendChart = this.buildAreaChart(trendRows.map(t => ({ label: weekLabel(t.wk), a: t.agg.revenue, b: t.agg.profit })));
-    const dashboardTopCols = weeksSel.length <= 8 ? 'repeat(auto-fit,minmax(360px,1fr))' : '1fr';
+    const dashboardTopCols = chartWeeks.length <= 8 ? 'repeat(auto-fit,minmax(360px,1fr))' : '1fr';
 
     // kitchen vs bar comparison per week
-    const kBarRows = weeksSel.map(wk => ({
+    const kBarRows = chartWeeks.map(wk => ({
       wk,
       k: this.weekAggregate(db, wk, 'kitchen'),
       b: this.weekAggregate(db, wk, 'bar'),
@@ -7103,7 +7107,7 @@ class Component extends DCLogic {
       trendTotalBg: tT.bg, trendTotalColor: tT.color, trendKitchenBg: tK.bg, trendKitchenColor: tK.color, trendBarBg: tB.bg, trendBarColor: tB.color,
       compareRevChart, compareProfitChart,
       topPanels,
-      weeklyTopSections,
+      weeklyTopSections, showWeeklyTop: weeksSel.length > 1,
       weeklyTopQtyBg: this.state.weeklyTopMetric !== 'profit' ? '#20201d' : '#eeeae2',
       weeklyTopQtyColor: this.state.weeklyTopMetric !== 'profit' ? '#fff' : '#20201d',
       weeklyTopProfitBg: this.state.weeklyTopMetric === 'profit' ? '#20201d' : '#eeeae2',
