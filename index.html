@@ -4838,6 +4838,64 @@ function listNames(items, n) {
  * ctx: { rowsCur, rowsPrev, weeksCur, weeksPrev, weekly: [{wk, revenue, profit}] }
  * rows* — строки flatten() по выбранному разделу.
  */
+// Проверка наценки использует те же суммы выручки и себестоимости, что «Категории».
+// Порог — сигнал для сверки, а не норматив цены или обещание дополнительной прибыли.
+function markupReviewItems(rows) {
+  const items = insightItems(rows);
+  for (const a of items.values()) {
+    if (!isRefill(a.name)) continue;
+    const mainName = normName(a.name).replace(/^плюс 1\s*/, '');
+    const main = Array.from(items.values()).find(b => b.section === a.section && normName(b.name) === mainName);
+    if (main) { main.cost += a.cost; main.profit -= a.cost; main.markup = main.cost > 0 ? main.profit / main.cost * 100 : null; }
+  }
+  return Array.from(items.values()).filter(a => a.qty > 0 && a.revenue > 0 && a.cost > 0 &&
+    !isServiceItem(a.name) && !isRefill(a.name) &&
+    !/staff|стафф|персонал|комплимент|обслуживан|билет/i.test(a.name + ' ' + a.category) &&
+    !/^(молоко|сироп|сливки)(\s|$)/i.test(a.name.trim()));
+}
+
+function markupReviewInsights(rowsCur, rowsPrev, per) {
+  const current = markupReviewItems(rowsCur), previous = new Map(markupReviewItems(rowsPrev).map(a => [a.key, a]));
+  const median = xs => { const a = xs.slice().sort((x,y) => x-y); const m = Math.floor(a.length/2); return a.length % 2 ? a[m] : (a[m-1]+a[m])/2; };
+  const bottle = a => /вина/i.test(a.category) && !/125|бокал/i.test(a.category) && /750|бутыл/i.test(a.name);
+  const enough = a => a.qty >= (bottle(a) ? 1 : 3);
+  // Напитки бизнесов и завтраков различаются по экономике даже внутри «Бранчи».
+  const group = a => {
+    if (/без категории|обслуживан|билет/i.test(a.category)) return null;
+    if (/безлимит/i.test(a.name)) return a.section + '|безлимит';
+    let key = a.section + '|' + a.category;
+    if (/бранчи|бизнес/i.test(a.category) && a.section === 'bar') {
+      key += /чай/i.test(a.name) ? '|чай' : /кофе|американо|капучино|латте/i.test(a.name) ? '|кофе' : /сок/i.test(a.name) ? '|сок' : /игрист/i.test(a.name) ? '|игристое' : '|' + a.name;
+    }
+    return key;
+  };
+  const candidates = [];
+  for (const a of current) {
+    if (!enough(a)) continue;
+    const p = previous.get(a.key);
+    const drop = p && enough(p) && p.markup > 0 && p.category === a.category && p.markup - a.markup >= 30 && a.markup <= p.markup * 0.75;
+    const key = group(a);
+    const peers = key && !/безлимит/i.test(a.name) ? current.filter(b => b.key !== a.key && group(b) === key && enough(b) && b.markup > 0) : [];
+    const reference = peers.length >= 3 ? median(peers.map(b => b.markup)) : null;
+    const low = reference != null && a.markup < reference * 0.7 && reference - a.markup >= 30;
+    if (!drop && !low) continue;
+    const target = low ? reference * 0.7 : p.markup;
+    const exposure = Math.max(0, a.cost - a.revenue / (1 + Math.max(0, target) / 100));
+    const sample = `${fmtNum(a.qty)} шт ${per}` + (a.qty < 3 ? '; малая выборка — меньше трёх продаж' : '');
+    const comparison = low ? `Категория «${a.category}»: медиана ${fmtPct(reference)} по ${peers.length} другим позициям; порог проверки ${fmtPct(reference * 0.7)} (70% медианы). ` : '';
+    const change = drop ? `Свой предыдущий период: ${fmtPct(p.markup)} → ${fmtPct(a.markup)} (−${Math.round(p.markup-a.markup)} п.п.). Себестоимость единицы ${fmtRub(p.cost/p.qty)} → ${fmtRub(a.cost/a.qty)}, средняя цена ${fmtRub(p.price)} → ${fmtRub(a.price)}. ` : `Средняя цена ${fmtRub(a.price)}, себестоимость единицы ${fmtRub(a.cost/a.qty)}. `;
+    candidates.push({
+      kind: 'problem', markupReview: true, section: a.section, item: {section:a.section,name:a.name},
+      title: drop ? `Проверить падение наценки: «${a.name}»` : `Проверить низкую наценку: «${a.name}»`,
+      detail: `Наценка ${fmtPct(a.markup)}; ${sample}. ${comparison}${change}` + (/безлимит/i.test(a.name) ? 'Себестоимость бесплатных доливов включена один раз. ' : '') + `Отклонение себестоимости от ориентира ≈ ${fmtRub(exposure)}; это объём проверки, не доказанный убыток или прогноз экономии.`,
+      hypothesis: 'Возможны изменение закупочной цены или техкарты, скидки, ошибка учёта либо намеренная цена акции. Само отклонение не доказывает ошибку.',
+      check: 'В разделе «Категории» сверить продажи и скидки, последнюю закупку, единицу измерения, выход и списания по техкарте. Для вина проверить объём бокала/бутылки; для бизнесов и акций — согласованную цену. Решать о цене после сверки.',
+      impact: exposure,
+    });
+  }
+  return candidates.sort((a,b) => b.impact-a.impact).slice(0,8);
+}
+
 function buildInsights(ctx) {
   const { rowsCur, rowsPrev, weeksCur, weeksPrev } = ctx;
   const out = [];
@@ -4933,47 +4991,8 @@ function buildInsights(ctx) {
     });
   }
 
-  // 3. Падение наценки на стабильных позициях
-  if (hasPrev) {
-    const eroded = [];
-    for (const [k, c] of cur) {
-      const p = prev.get(k);
-      if (!p || !menu(c) || c.qty < 5 || p.qty < 5 || c.markup == null || p.markup == null) continue;
-      const loss = c.qty * (p.unitProfit - c.unitProfit);
-      if (p.markup - c.markup >= 40 && loss >= minImpact / 2) eroded.push({ c, p, loss });
-    }
-    eroded.sort((a, b) => b.loss - a.loss);
-    for (const x of eroded.slice(0, 3)) {
-      add({
-        kind: 'problem', section: x.c.section, item: { section: x.c.section, name: x.c.name },
-        title: `Наценка на «${x.c.name}» упала с ${fmtPct(x.p.markup)} до ${fmtPct(x.c.markup)}`,
-        detail: `Себестоимость порции ${fmtRub(x.p.cost / x.p.qty)} → ${fmtRub(x.c.cost / x.c.qty)}, цена ${fmtRub(x.p.price)} → ${fmtRub(x.c.price)}. Недополучено ${fmtRub(x.loss)} ${per}.`,
-        hypothesis: 'Поставщик поднял цену или кухня кладёт больше, чем по техкарте.',
-        check: 'Сравнить последние приходные накладные и сделать контрольную закладку по техкарте.',
-        impact: x.loss,
-      });
-    }
-  }
-
-  // 4. Хиты с низкой наценкой: поднять цену
-  for (const st of Object.values(sectionStats)) {
-    const sec = st.sec;
-    if (st.markup == null) continue;
-    const horses = st.items
-      .filter(a => a.qty >= st.avgQty * 1.3 && a.markup != null && a.markup < st.markup * 0.7 && a.profit > 0)
-      .sort((a, b) => b.revenue - a.revenue);
-    for (const a of horses.slice(0, 2)) {
-      const gain = a.revenue * 0.07;
-      add({
-        kind: 'opportunity', section: sec, item: { section: sec, name: a.name },
-        title: `«${a.name}» — хит с низкой наценкой`,
-        detail: `${fmtNum(a.qty)} шт ${per}, наценка ${fmtPct(a.markup)} против ${fmtPct(st.markup)} в среднем ${st.biz ? 'по бизнес-обедам' : 'по разделу'}. Цена +7% при тех же продажах даст ≈ ${fmtRub(gain)} ${per}.`,
-        hypothesis: 'Гости берут позицию не из-за цены — небольшое повышение не снизит спрос.',
-        check: `Поднять цену на 5–7% и через 2 недели сравнить количество продаж.`,
-        impact: gain,
-      });
-    }
-  }
+  // 3–4. Проверка низкой наценки внутри категории и падения собственной наценки.
+  for (const ins of markupReviewInsights(rowsCur, rowsPrev, per)) add(ins);
 
   // 5. Маржинальные, но непопулярные: продвигать. Сравниваем внутри
   // категории, иначе бутылка вина всегда «выгоднее» бокала.
@@ -6957,7 +6976,7 @@ class Component extends DCLogic {
         rejectLabel: rejected ? 'Изменить причину' : 'Не согласен',
         kindLabel: k.label, color: k.color, bg: k.bg,
         sectionLabel: s.label, sectionColor: s.color,
-        impactLabel: ins.impact > 0 && ins.kind === 'problem' ? `Под угрозой ≈ ${roundRub(ins.impact)}`
+        impactLabel: ins.markupReview ? `Объём проверки ≈ ${roundRub(ins.impact)}` : ins.impact > 0 && ins.kind === 'problem' ? `Под угрозой ≈ ${roundRub(ins.impact)}`
           : ins.impact > 0 && ins.kind === 'opportunity' ? `Потенциал ≈ ${roundRub(ins.impact)}` : '',
         addLabel: rejected ? 'Отклонён' : added ? '✓ В гипотезах' : '＋ В гипотезы',
         addBg: added ? '#eef5ef' : '#ffffff',
