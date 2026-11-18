@@ -99,7 +99,11 @@ def needs_culprit(event):
     """Из текста не понять, кто разбил, и в чате ещё не ответили."""
     if "culprit" in event:
         return False
-    return any(culprit(event["text"], it["reason"]) is None for it in event["items"] if it["kind"] != "unknown")
+    return any(
+        culprit(event["text"], it["reason"]) is None
+        for it in event["items"]
+        if it["kind"] != "unknown" and it["reason"] != "Естественный износ"
+    )
 
 
 def apply_answer(data, chat_id, msg, who):

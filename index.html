@@ -5183,6 +5183,7 @@ function buildInsights(ctx) {
 const GLASS_TZ = 'Europe/Moscow';
 const GLASS_REASON_COLORS = {
   'Натирка': '#a86b1f', 'Мойка': '#3d6f8f', 'Техперсонал': '#7a4f9a', 'Гости': '#4f7d4a',
+  'Естественный износ': '#9a8a5c',
   'Скол / трещина': '#9a8a5c', 'Уронили / случайно': '#b23b3b', 'Не указана': '#a39e92',
 };
 const GLASS_PERIODS = [
@@ -5232,6 +5233,7 @@ function glassStaffName(who) {
   return short.charAt(0).toUpperCase() + short.slice(1);
 }
 function glassCulprit(e, it) {
+  if (it.reason === 'Естественный износ') return { group: 'Естественный износ' };
   // ответ в чате на вопрос бота «Кто разбил?»
   if (e.culprit) return e.culprit.staff ? { staff: glassStaffName(e.culprit.staff) } : { group: e.culprit.group };
   const text = e.text || '';
