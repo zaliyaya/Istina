@@ -6371,7 +6371,7 @@
      "item": "Хайбол",
      "kind": "glass",
      "qty": 1,
-     "reason": "Скол / трещина",
+     "reason": "Естественный износ",
      "reason_text": "трещина"
     }
    ],
@@ -6387,7 +6387,7 @@
      "item": "Хайбол",
      "kind": "glass",
      "qty": 1,
-     "reason": "Скол / трещина",
+     "reason": "Естественный износ",
      "reason_text": "скол"
     }
    ],
@@ -6404,7 +6404,7 @@
  },
  "updated": "2026-11-18T02:10:02+00:00",
  "verified": {
-  "telegram": "2026-11-16",
-  "iikoReceiptsThrough": "2026-11-16"
+  "telegram": "2026-11-23",
+  "iikoReceiptsThrough": "2026-11-23"
  }
 }
